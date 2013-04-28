@@ -1,0 +1,10 @@
+Title	Author	ISBN	ISBN13	Lexile Code	Lexile	Publisher	Pages	DocType	Series	Awards	Summary	Last Updated Date	Lexile Combined
+The Immune System		0789170191	9780789170194		1060	Perfection Learning	40	Trade Nonfiction	None		None	2010-12-31	1060L
+Giant in the Forest, A		0673779416	9780673779410		510	Celebration Press	7	Trade Fiction	None		None	2010-12-31	510L
+Pot of Gold, The		0673779408	9780673779403		530	Celebration Press	11	Trade Fiction	None		None	2010-12-31	530L
+Wagon, The		0673779386	9780673779380		440	Celebration Press	7	Trade Fiction	None		None	2010-12-31	440L
+Robert's New Friend		0673779378	9780673779373		190	Celebration Press	11	Trade Fiction	None		None	2010-12-31	190L
+Duke		067377936X	9780673779366		50	Celebration Press	7	Trade Fiction	None		None	2010-12-31	50L
+Encyclopedia of Places		0765251353	9780765251350	IG	130	Pearson Learning Group	13	Trade Nonfiction	None		None	2010-12-31	I130L
+Cyrano and the Nose		0439682495	9780439682497		450	Scholastic	48	Trade Fiction	None		None	2010-12-31	450L
+Twin Talk: Advice from a TV Talk Show		0439124069	9780439124065		220	Scholastic	36	Trade Fiction	None		None	2010-12-31	220L

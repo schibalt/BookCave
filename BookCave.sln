@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookCave.Service", "Bookcave.Service.App\BookCave.Service.csproj", "{D239C264-F7CF-4227-8BA6-79568CEFB60B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{11DB774E-6A02-4E5A-9732-2AD56AD3B79B}"
+	ProjectSection(SolutionItems) = preProject
+		ApplicationProvisioning_Script.sql = ApplicationProvisioning_Script.sql
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "root", "root\root.csproj", "{1F0016B7-07DF-4257-9454-5233A09E59EE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MvcApplication1", "MvcApplication1\MvcApplication1.csproj", "{51BDA8E3-98AA-44F2-9F8E-F650195D3250}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookcaveUnitTests", "BookcaveUnitTests\BookcaveUnitTests.csproj", "{843F9C1D-07D8-4F5D-BDF4-8A4C67DD2D2B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D239C264-F7CF-4227-8BA6-79568CEFB60B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D239C264-F7CF-4227-8BA6-79568CEFB60B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D239C264-F7CF-4227-8BA6-79568CEFB60B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D239C264-F7CF-4227-8BA6-79568CEFB60B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F0016B7-07DF-4257-9454-5233A09E59EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F0016B7-07DF-4257-9454-5233A09E59EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F0016B7-07DF-4257-9454-5233A09E59EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F0016B7-07DF-4257-9454-5233A09E59EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51BDA8E3-98AA-44F2-9F8E-F650195D3250}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51BDA8E3-98AA-44F2-9F8E-F650195D3250}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51BDA8E3-98AA-44F2-9F8E-F650195D3250}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51BDA8E3-98AA-44F2-9F8E-F650195D3250}.Release|Any CPU.Build.0 = Release|Any CPU
+		{843F9C1D-07D8-4F5D-BDF4-8A4C67DD2D2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{843F9C1D-07D8-4F5D-BDF4-8A4C67DD2D2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{843F9C1D-07D8-4F5D-BDF4-8A4C67DD2D2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{843F9C1D-07D8-4F5D-BDF4-8A4C67DD2D2B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		EnterpriseLibraryConfigurationToolBinariesPath = packages\Unity.2.1.505.2\lib\NET35;packages\Unity.Interception.2.1.505.2\lib\NET35;packages\EnterpriseLibrary.Common.5.0.505.0\lib\NET35;packages\EnterpriseLibrary.Data.5.0.505.0\lib\NET35
+	EndGlobalSection
+EndGlobal
