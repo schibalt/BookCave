@@ -7,8 +7,9 @@ using System.Reflection;
 using AutoMapper;
 using System.Text.RegularExpressions;
 using BookCave.Service.Dto;
-using System.Data.Entity.Validation;
 using System.Data.Entity.Infrastructure;
+using System.Data.Objects;
+using BookCave.Service.Entities;
 
 namespace BookCave.Service
 {
@@ -17,6 +18,18 @@ namespace BookCave.Service
         // Set the log source
         private readonly ILogger log = LogManager.Instance().GetLogger(typeof(BookService));
 
+        private bool LexileRecordVerified(LexileDto lexileDto)
+        {
+            var isbn13Regex = @"(\d{13})"; //needs to be a 13 digit character
+            var r = new Regex(isbn13Regex, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var m = r.Match(lexileDto.Isbn13.ToString());
+
+            if (m.Success && lexileDto.Isbn.Length == 10)
+                return true;
+
+            return false;
+        }
+
         /// <summary>
         ///     Adds or updates a single book in the books database
         /// </summary>
@@ -24,40 +37,45 @@ namespace BookCave.Service
         /// <returns></returns>
         public ResultDto PostLexileData(LexileDto lexileDto)
         {
+            if (!LexileRecordVerified(lexileDto))
+                return new ResultDto { ResultDescription = "bad object" };
+
             Mapper.CreateMap<LexileDto, SkillRecord>();
             using (var context = new BookcaveEntities())
             {
-                var currentSkillRecord = context.SkillRecords.Find(lexileDto.Isbn13);
-                //SkillRecord modifiedSkillRecord;
-
+                var skillRecords = context.Database.SqlQuery<SkillRecord>("Select * from SkillRecords where Isbn13 = {0}", lexileDto.Isbn13);
+                var currentSkillRecord = skillRecords.FirstOrDefault();
                 if (currentSkillRecord != null)
                     currentSkillRecord = Mapper.Map<LexileDto, SkillRecord>(lexileDto, currentSkillRecord);
                 else
                 {
                     //context.SkillRecords.Add(new SkillRecord{LexUpdate=lexileDto.LexUpdate,LexScore=lexileDto.LexScore,LexCode=lexileDto.LexCode});
                     var newSkillRecord = Mapper.Map<LexileDto, SkillRecord>(lexileDto);
+
                     context.SkillRecords.Add(newSkillRecord);
                 }
 
                 Mapper.CreateMap<LexileDto, BookRecord>();
-                var currentBookRecord = context.BookRecords.Find(lexileDto.Isbn13);
+                var bookRecords = context.Database.SqlQuery<BookRecord>("Select * from BookRecords where Isbn13 = {0}", lexileDto.Isbn13);
+                var currentBookRecord = bookRecords.FirstOrDefault();
 
                 if (currentBookRecord != null)
                     currentBookRecord = Mapper.Map<LexileDto, BookRecord>(lexileDto, currentBookRecord);
                 else
                 {
                     var newBookRecord = Mapper.Map<LexileDto, BookRecord>(lexileDto);
+
                     context.BookRecords.Add(newBookRecord);
                 }
 
-                try
-                {
-                    context.SaveChanges();
-                }
-                catch (DbEntityValidationException e) { Console.WriteLine(e.Message); }
-                catch (DbUpdateException e) { Console.WriteLine(e.Message); }
+                context.SaveChanges();
+                //try
+                //{
+                //}
+                //catch (DbEntityValidationException e) { Console.WriteLine(e.Message); }
+                //catch (DbUpdateException e) { Console.WriteLine(e.Message); }
             }
-            return new ResultDto { ResultDescription = "success", ResultCode = 1 };
+            return new ResultDto { ResultDescription = "success" };
         }
 
         /// <summary>
@@ -65,44 +83,70 @@ namespace BookCave.Service
         /// </summary>
         /// <param name="isbn13">exact isbn 13</param>
         /// <returns>single book</returns>
-        public LexileDto GetBook(string isbn13)
+        public SkillDto GetSkillMetrics(string isbn13)
         {
-            log.Debug("Enter " + MethodBase.GetCurrentMethod().Name);
-            var result = new LexileDto();
-            try
+            using (var context = new BookcaveEntities())
             {
-                using (var context = new BookcaveEntities())
-                {
-                    // apparently this is sql injection proof since, under the covers, it converts it to a dbparam, slick way of doing parameterized queries
-                    var bookRecords = context.Database.SqlQuery(typeof(BookRecord), "Select * from Books where Isbn13 = {0}", isbn13);
+                // apparently this is sql injection proof since, under the covers, it converts it to a dbparam, slick way of doing parameterized queries
+                var skillRecords = context.Database.SqlQuery<SkillRecord>("Select * from SkillRecords where Isbn13 = {0}", isbn13);
 
-                    // should only be 1 result since isbn13 is primary key
-                    // if there are no results then nothing will be set
-                    foreach (BookRecord book in bookRecords)
-                    {
-                        Mapper.CreateMap<BookRecord, LexileDto>();
-                        result = Mapper.Map<BookRecord, LexileDto>(book);
-                    }
+                // Entity Framework is throwing exception converting SaasGrid connectionstring to SqlClient connectionstring
+                // Direct query as well as using Entity Framework to do an insertion works though
+                // Also, this works if we just publish this web service outside of Apprenda in IIS
+                // This should be submitted as a bug report to Apprenda
 
-                    // Entity Framework is throwing exception converting SaasGrid connectionstring to SqlClient connectionstring
-                    // Direct query as well as using Entity Framework to do an insertion works though
-                    // Also, this works if we just publish this web service outside of Apprenda in IIS
-                    // This should be submitted as a bug report to Apprenda
+                //var query = from book in context.SkillRecords
+                //            where book.Isbn13 == isbn13
+                //            select book;
 
-                    /*          var query = from book in context.Books
-                                          where book.Isbn13 == isbn13
-                                          select book;
+                //var skillRecord = context.SkillRecords.First(book => book.Isbn13.Equals(isbn13));
 
-                              Book bookResult = query.First();
-                              result = new BookDto(bookResult);*/
-                }
+                var skillRecord = skillRecords.FirstOrDefault();
+
+                if (skillRecord == null)
+                    return new SkillDto();
+                var scholasticGrade = skillRecord.ScholasticGrade;
+                var dra = skillRecord.Dra;
+                var lexscore = skillRecord.LexScore;
+                var guidedReading = skillRecord.GuidedReading;
+
+                Mapper.CreateMap<SkillRecord, SkillDto>();
+                var skillDto = Mapper.Map<SkillRecord, SkillDto>(skillRecord);
+                var aggregateSkill = AggregationFunctions.AggregateSkill(scholasticGrade, dra, lexscore, guidedReading);
+                skillDto.AggregateSkill = aggregateSkill;
+                return skillDto;
             }
-            catch (Exception e)
+        }
+
+        /// <summary>
+        ///     Retrieves a single book from the book database
+        /// </summary>
+        /// <param name="isbn13">exact isbn 13</param>
+        /// <returns>single book</returns>
+        public ContentDto GetContentMetrics(string isbn13)
+        {
+            using (var context = new BookcaveEntities())
             {
-                log.Error("Exception in GetBook.", e);
+                var contentRecords = context.Database.SqlQuery<ContentRecord>("Select * from ContentRecords where Isbn13 = {0}", isbn13);
+                var contentRecord = contentRecords.FirstOrDefault();
+
+                if (contentRecord == null)
+                    return new ContentDto();
+
+                var scholasticGradeHigher = contentRecord.ScholasticGradeHigher;
+                var scholasticGradeLower = contentRecord.ScholasticGradeLower;
+                var barnesAgeYoung = contentRecord.BarnesAgeYoung;
+                var barnesAgeOld = contentRecord.BarnesAgeOld;
+
+                //make DTO
+                Mapper.CreateMap<ContentRecord, ContentDto>();
+                var contentDto = Mapper.Map<ContentRecord, ContentDto>(contentRecord);
+
+                //get aggregated content score, assign to DTO property, then return
+                var aggregateContent = AggregationFunctions.AggregateContent(scholasticGradeHigher, scholasticGradeLower, barnesAgeYoung, barnesAgeOld);
+                contentDto.AggregateContent = aggregateContent;
+                return contentDto;
             }
-            log.Debug("Exit " + MethodBase.GetCurrentMethod().Name);
-            return result;
         }
 
         /// <summary>
@@ -269,7 +313,7 @@ namespace BookCave.Service
         {
             // TODO: implement basic authentication (don't worry about this until later)
             // add or update books in the books database
-            return new ResultDto { ResultCode = 0, ResultDescription = "Success" };
+            return new ResultDto { ResultDescription = "Success" };
         }
 
         public ResultDto PostBarnesData(BarnesDto barnesDto)
@@ -277,7 +321,7 @@ namespace BookCave.Service
             using (var context = new BookcaveEntities())
             {
                 var currentRatingRecord = context.RatingRecords.Find(barnesDto.Isbn13);
-                //Mapper.CreateMap<BarnesDto, RatingRecord>();
+                Mapper.CreateMap<BarnesDto, RatingRecord>();
 
                 if (currentRatingRecord != null)
                     currentRatingRecord = Mapper.Map<BarnesDto, RatingRecord>(barnesDto, currentRatingRecord);
@@ -288,7 +332,7 @@ namespace BookCave.Service
                 }
 
                 var currentContentRecord = context.ContentRecords.Find(barnesDto.Isbn13);
-                //Mapper.CreateMap<BarnesDto,ContentRecord>();
+                Mapper.CreateMap<BarnesDto, ContentRecord>();
 
                 if (currentContentRecord != null)
                     currentContentRecord = Mapper.Map(barnesDto, currentContentRecord);
@@ -302,38 +346,80 @@ namespace BookCave.Service
                 try
                 {
                 }
-                catch (Exception e) { return new ResultDto { ResultCode = 0, ResultDescription = e.Message }; }
+                catch (DbUpdateException e)
+                {
+                    Console.WriteLine("book metadata wasn't found in primary table.");
+                    return new ResultDto { ResultDescription = e.Message };
+                }
             }
 
-            return new ResultDto { ResultCode = 1, ResultDescription = "Updated" };
+            return new ResultDto { ResultDescription = "Updated" };
+        }
+
+        private ResultDto VerifyScholasticDto(ScholasticDto dto)
+        {
+            if (dto.GuidedReading.Length != 1 || !Char.IsLetter(Convert.ToChar(dto.GuidedReading)))
+                return new ResultDto { ResultDescription = "incorrect format for guided reading level property", ResultCode = -2 };
+
+            var re1 = "(\\d+)";	// lower dra bound
+            var re2 = "(-)";	// hyphen
+            var re3 = "(\\d+)";	// upper dra bound
+
+            var regexScoreRange = new Regex(re1 + re2 + re3, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var matchScoreRange = regexScoreRange.Match(dto.Dra);
+            var regexScore = new Regex("(\\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var matchScore = regexScore.Match(dto.Dra);
+
+            if (!matchScoreRange.Success && !matchScore.Success) //if the parameter is a range 
+                return new ResultDto { ResultDescription = "incorrect dra format ", ResultCode = -1 };
+
+            return new ResultDto { ResultDescription = "success" };
         }
 
         public ResultDto PostScholasticData(ScholasticDto scholasticDto)
         {
+            scholasticDto.GuidedReading = scholasticDto.GuidedReading.Trim();
+            scholasticDto.Dra = scholasticDto.Dra.Trim();
+
+            var verificationResult = VerifyScholasticDto(scholasticDto);
+
+            if (verificationResult.ResultCode < 0)
+                return verificationResult;
+
             using (var context = new BookcaveEntities())
             {
                 var currentSkillData = context.SkillRecords.Find(scholasticDto.Isbn13);
+                Mapper.CreateMap<ScholasticDto, SkillRecord>();
 
                 if (currentSkillData != null)
                     currentSkillData = Mapper.Map<ScholasticDto, SkillRecord>(scholasticDto, currentSkillData);
                 else
                 {
                     var newSkillRecord = Mapper.Map<ScholasticDto, SkillRecord>(scholasticDto);
+
                     context.SkillRecords.Add(newSkillRecord);
                 }
 
                 var currentContentData = context.ContentRecords.Find(scholasticDto.Isbn13);
+                Mapper.CreateMap<ScholasticDto, ContentRecord>();
 
                 if (currentContentData != null)
                     currentContentData = Mapper.Map<ScholasticDto, ContentRecord>(scholasticDto, currentContentData);
                 else
                 {
                     var newContentRecord = Mapper.Map<ScholasticDto, ContentRecord>(scholasticDto);
+
                     context.ContentRecords.Add(newContentRecord);
                 }
+
                 context.SaveChanges();
+                //try
+                //{
+                //}
+                //catch (DbEntityValidationException e) { Console.WriteLine(e.Message); }
+                //catch (DbUpdateException e) { Console.WriteLine(e.Message); }
             }
-            return new ResultDto { ResultDescription = "Updated", ResultCode = 1 };
+            return new ResultDto { ResultDescription = "Updated" };
         }
     }
 }

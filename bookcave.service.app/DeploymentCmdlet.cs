@@ -25,8 +25,9 @@ namespace BookCave.Service
                 {
                     file.WriteLine(line);
 
-                    Console.WriteLine(line);
+                    //Console.WriteLine(line);
                 }
-        }
+            Console.WriteLine("USE [bookcave]; commented out");
+            }
     }
 }

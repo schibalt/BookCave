@@ -10,16 +10,16 @@ namespace BookCave.Service.Dto
     public class ScholasticDto
     {
         [DataMember]
-        public long Isbn13 { get; set; }
+        public string Isbn13 { get; set; }
 
         [DataMember]
-        public string ScholasticGradeHigher { get; set; } //interest range by grade
+        public string ScholasticGradeLower { get; set; } //interest range by grade
 
         [DataMember]
-        public sbyte ScholasticGradeLower { get; set; } //interest range by grade
+        public Nullable<byte> ScholasticGradeHigher { get; set; } //interest range by grade
 
         [DataMember]
-        public double ScholasticGrade { get; set; } //scholastic level
+        public Nullable<double> ScholasticGrade { get; set; } //scholastic level
 
         [DataMember]
         public string Dra { get; set; } // DRA dev reading assess level

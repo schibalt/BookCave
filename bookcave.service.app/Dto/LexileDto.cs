@@ -15,13 +15,13 @@ namespace BookCave.Service.Dto
         public string Isbn { get; set; }
 
         [DataMember]
-        public long Isbn13 { get; set; }
+        public string Isbn13 { get; set; }
 
         [DataMember]
         public string LexCode { get; set; }
 
         [DataMember]
-        public short LexScore { get; set; }
+        public Nullable<short> LexScore { get; set; }
 
         [DataMember]
         public string Publisher { get; set; }

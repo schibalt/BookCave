@@ -39,8 +39,12 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Apprenda\SDK\API Files\Apprenda.Logging.NLog.dll</HintPath>
     </Reference>
+    <Reference Include="BookCave.Service">
+      <HintPath>..\BookCave.Service.App\bin\Release\BookCave.Service.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.XML" />
   </ItemGroup>
   <Choose>
     <When Condition="('$(VisualStudioVersion)' == '10.0' or '$(VisualStudioVersion)' == '') and '$(TargetFrameworkVersion)' == 'v3.5'">
@@ -55,14 +59,8 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="UnitTest1.cs" />
+    <Compile Include="BookcaveUnitTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Bookcave.Service.App\BookCave.Service.csproj">
-      <Project>{d239c264-f7cf-4227-8ba6-79568cefb60b}</Project>
-      <Name>BookCave.Service</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.Config" />

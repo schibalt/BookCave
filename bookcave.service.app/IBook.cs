@@ -42,11 +42,14 @@ namespace BookCave
         //BookResponseDto PostBooks(List<BookDto> books);
 
         [OperationContract]
-        [WebGet( BodyStyle = WebMessageBodyStyle.Bare,
-            ResponseFormat = WebMessageFormat.Json,
-            RequestFormat = WebMessageFormat.Json,
-            UriTemplate = "books/{isbn13}")]
-        LexileDto GetBook(string isbn13);
+        [WebGet(ResponseFormat = WebMessageFormat.Json,
+            UriTemplate = "skill/{isbn13}")]
+        SkillDto GetSkillMetrics(string isbn13);
+
+        [OperationContract]
+        [WebGet(ResponseFormat = WebMessageFormat.Json,
+            UriTemplate = "content/{isbn13}")]
+        ContentDto GetContentMetrics(string isbn13);
 
         [OperationContract]
         [WebGet( 

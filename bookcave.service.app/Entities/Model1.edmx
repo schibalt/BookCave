@@ -1,0 +1,289 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="bookcaveModel.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2008" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+  <EntityContainer Name="bookcaveModelStoreContainer">
+    <EntitySet Name="BookRecords" EntityType="bookcaveModel.Store.BookRecords" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="ContentRecords" EntityType="bookcaveModel.Store.ContentRecords" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="RatingRecords" EntityType="bookcaveModel.Store.RatingRecords" store:Type="Tables" Schema="dbo" />
+    <EntitySet Name="SkillRecords" EntityType="bookcaveModel.Store.SkillRecords" store:Type="Tables" Schema="dbo" />
+    <AssociationSet Name="FK_BookRating" Association="bookcaveModel.Store.FK_BookRating">
+      <End Role="BookRecords" EntitySet="BookRecords" />
+      <End Role="RatingRecords" EntitySet="RatingRecords" />
+    </AssociationSet>
+    <AssociationSet Name="FK_BookSkill" Association="bookcaveModel.Store.FK_BookSkill">
+      <End Role="BookRecords" EntitySet="BookRecords" />
+      <End Role="SkillRecords" EntitySet="SkillRecords" />
+    </AssociationSet>
+    <AssociationSet Name="FK_ContentBook" Association="bookcaveModel.Store.FK_ContentBook">
+      <End Role="BookRecords" EntitySet="BookRecords" />
+      <End Role="ContentRecords" EntitySet="ContentRecords" />
+    </AssociationSet>
+  </EntityContainer>
+  <EntityType Name="BookRecords">
+    <Key>
+      <PropertyRef Name="Isbn13" />
+    </Key>
+    <Property Name="Isbn13" Type="nvarchar" Nullable="false" MaxLength="13" />
+    <Property Name="Title" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Author" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="Isbn" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Publisher" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="PageCount" Type="smallint" Nullable="true" />
+    <Property Name="DocType" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="Series" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="Awards" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="Summary" Type="nvarchar(max)" Nullable="true" />
+  </EntityType>
+  <EntityType Name="ContentRecords">
+    <Key>
+      <PropertyRef Name="Isbn13" />
+    </Key>
+    <Property Name="Isbn13" Type="nvarchar" Nullable="false" MaxLength="13" />
+    <Property Name="ScholasticGradeHigher" Type="tinyint" Nullable="true" />
+    <Property Name="ScholasticGradeLower" Type="nvarchar" Nullable="true" MaxLength="2" />
+    <Property Name="BarnesAgeYoung" Type="tinyint" Nullable="true" />
+    <Property Name="BarnesAgeOld" Type="tinyint" Nullable="true" />
+  </EntityType>
+  <EntityType Name="RatingRecords">
+    <Key>
+      <PropertyRef Name="Isbn13" />
+    </Key>
+    <Property Name="Isbn13" Type="nvarchar" Nullable="false" MaxLength="13" />
+    <Property Name="BarnesAvg" Type="float" Nullable="true" />
+  </EntityType>
+  <EntityType Name="SkillRecords">
+    <Key>
+      <PropertyRef Name="Isbn13" />
+    </Key>
+    <Property Name="ScholasticGrade" Type="float" Nullable="true" />
+    <Property Name="Dra" Type="nvarchar" Nullable="true" MaxLength="5" />
+    <Property Name="LexScore" Type="smallint" Nullable="true" />
+    <Property Name="GuidedReading" Type="nvarchar" Nullable="true" MaxLength="1" />
+    <Property Name="Isbn13" Type="nvarchar" Nullable="false" MaxLength="13" />
+    <Property Name="LexCode" Type="nvarchar(max)" Nullable="true" />
+    <Property Name="LexUpdate" Type="datetime" Nullable="true" />
+  </EntityType>
+  <Association Name="FK_BookRating">
+    <End Role="BookRecords" Type="bookcaveModel.Store.BookRecords" Multiplicity="1" />
+    <End Role="RatingRecords" Type="bookcaveModel.Store.RatingRecords" Multiplicity="0..1" />
+    <ReferentialConstraint>
+      <Principal Role="BookRecords">
+        <PropertyRef Name="Isbn13" />
+      </Principal>
+      <Dependent Role="RatingRecords">
+        <PropertyRef Name="Isbn13" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK_BookSkill">
+    <End Role="BookRecords" Type="bookcaveModel.Store.BookRecords" Multiplicity="1" />
+    <End Role="SkillRecords" Type="bookcaveModel.Store.SkillRecords" Multiplicity="0..1" />
+    <ReferentialConstraint>
+      <Principal Role="BookRecords">
+        <PropertyRef Name="Isbn13" />
+      </Principal>
+      <Dependent Role="SkillRecords">
+        <PropertyRef Name="Isbn13" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+  <Association Name="FK_ContentBook">
+    <End Role="BookRecords" Type="bookcaveModel.Store.BookRecords" Multiplicity="1" />
+    <End Role="ContentRecords" Type="bookcaveModel.Store.ContentRecords" Multiplicity="0..1" />
+    <ReferentialConstraint>
+      <Principal Role="BookRecords">
+        <PropertyRef Name="Isbn13" />
+      </Principal>
+      <Dependent Role="ContentRecords">
+        <PropertyRef Name="Isbn13" />
+      </Dependent>
+    </ReferentialConstraint>
+  </Association>
+</Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="bookcaveModel" Alias="Self" p1:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:p1="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityContainer Name="BookcaveEntities" p1:LazyLoadingEnabled="true">
+          <EntitySet Name="BookRecords" EntityType="bookcaveModel.BookRecord" />
+          <EntitySet Name="ContentRecords" EntityType="bookcaveModel.ContentRecord" />
+          <EntitySet Name="RatingRecords" EntityType="bookcaveModel.RatingRecord" />
+          <EntitySet Name="SkillRecords" EntityType="bookcaveModel.SkillRecord" />
+          <AssociationSet Name="FK_BookRating" Association="bookcaveModel.FK_BookRating">
+            <End Role="BookRecords" EntitySet="BookRecords" />
+            <End Role="RatingRecords" EntitySet="RatingRecords" />
+          </AssociationSet>
+          <AssociationSet Name="FK_BookSkill" Association="bookcaveModel.FK_BookSkill">
+            <End Role="BookRecords" EntitySet="BookRecords" />
+            <End Role="SkillRecords" EntitySet="SkillRecords" />
+          </AssociationSet>
+          <AssociationSet Name="FK_ContentBook" Association="bookcaveModel.FK_ContentBook">
+            <End Role="BookRecords" EntitySet="BookRecords" />
+            <End Role="ContentRecords" EntitySet="ContentRecords" />
+          </AssociationSet>
+        </EntityContainer>
+        <EntityType Name="BookRecord">
+          <Key>
+            <PropertyRef Name="Isbn13" />
+          </Key>
+          <Property Name="Isbn13" Type="String" Nullable="false" MaxLength="13" Unicode="true" FixedLength="false" />
+          <Property Name="Title" Type="String" Nullable="false" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="Author" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="Isbn" Type="String" Nullable="false" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="Publisher" Type="String" Nullable="false" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="PageCount" Type="Int16" Nullable="true" />
+          <Property Name="DocType" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" Nullable="true" />
+          <Property Name="Series" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" Nullable="true" />
+          <Property Name="Awards" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" Nullable="true" />
+          <Property Name="Summary" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" Nullable="true" />
+          <NavigationProperty Name="RatingRecord" Relationship="bookcaveModel.FK_BookRating" FromRole="BookRecords" ToRole="RatingRecords" />
+          <NavigationProperty Name="SkillRecord" Relationship="bookcaveModel.FK_BookSkill" FromRole="BookRecords" ToRole="SkillRecords" />
+          <NavigationProperty Name="ContentRecord" Relationship="bookcaveModel.FK_ContentBook" FromRole="BookRecords" ToRole="ContentRecords" />
+        </EntityType>
+        <EntityType Name="ContentRecord">
+          <Key>
+            <PropertyRef Name="Isbn13" />
+          </Key>
+          <Property Name="Isbn13" Type="String" Nullable="false" MaxLength="13" Unicode="true" FixedLength="false" />
+          <Property Name="ScholasticGradeHigher" Type="Byte" />
+          <Property Name="ScholasticGradeLower" Type="String" MaxLength="2" Unicode="true" FixedLength="false" Nullable="true" />
+          <Property Name="BarnesAgeYoung" Type="Byte" />
+          <Property Name="BarnesAgeOld" Type="Byte" />
+          <NavigationProperty Name="BookRecord" Relationship="bookcaveModel.FK_ContentBook" FromRole="ContentRecords" ToRole="BookRecords" />
+        </EntityType>
+        <EntityType Name="RatingRecord">
+          <Key>
+            <PropertyRef Name="Isbn13" />
+          </Key>
+          <Property Name="Isbn13" Type="String" Nullable="false" MaxLength="13" Unicode="true" FixedLength="false" />
+          <Property Name="BarnesAvg" Type="Double" />
+          <NavigationProperty Name="BookRecord" Relationship="bookcaveModel.FK_BookRating" FromRole="RatingRecords" ToRole="BookRecords" />
+        </EntityType>
+        <EntityType Name="SkillRecord">
+          <Key>
+            <PropertyRef Name="Isbn13" />
+          </Key>
+          <Property Name="ScholasticGrade" Type="Double" />
+          <Property Name="Dra" Type="String" MaxLength="5" Unicode="true" FixedLength="false" />
+          <Property Name="LexScore" Type="Int16" />
+          <Property Name="GuidedReading" Type="String" MaxLength="1" Unicode="true" FixedLength="false" />
+          <Property Name="Isbn13" Type="String" Nullable="false" MaxLength="13" Unicode="true" FixedLength="false" />
+          <Property Name="LexCode" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="LexUpdate" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="BookRecord" Relationship="bookcaveModel.FK_BookSkill" FromRole="SkillRecords" ToRole="BookRecords" />
+        </EntityType>
+        <Association Name="FK_BookRating">
+          <End Role="BookRecords" Type="bookcaveModel.BookRecord" Multiplicity="1" />
+          <End Role="RatingRecords" Type="bookcaveModel.RatingRecord" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="BookRecords">
+              <PropertyRef Name="Isbn13" />
+            </Principal>
+            <Dependent Role="RatingRecords">
+              <PropertyRef Name="Isbn13" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_BookSkill">
+          <End Role="BookRecords" Type="bookcaveModel.BookRecord" Multiplicity="1" />
+          <End Role="SkillRecords" Type="bookcaveModel.SkillRecord" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="BookRecords">
+              <PropertyRef Name="Isbn13" />
+            </Principal>
+            <Dependent Role="SkillRecords">
+              <PropertyRef Name="Isbn13" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_ContentBook">
+          <End Role="BookRecords" Type="bookcaveModel.BookRecord" Multiplicity="1" />
+          <End Role="ContentRecords" Type="bookcaveModel.ContentRecord" Multiplicity="0..1" />
+          <ReferentialConstraint>
+            <Principal Role="BookRecords">
+              <PropertyRef Name="Isbn13" />
+            </Principal>
+            <Dependent Role="ContentRecords">
+              <PropertyRef Name="Isbn13" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+    <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+  <EntityContainerMapping StorageEntityContainer="bookcaveModelStoreContainer" CdmEntityContainer="BookcaveEntities">
+    <EntitySetMapping Name="BookRecords">
+      <EntityTypeMapping TypeName="IsTypeOf(bookcaveModel.BookRecord)">
+        <MappingFragment StoreEntitySet="BookRecords">
+          <ScalarProperty Name="Isbn13" ColumnName="Isbn13" />
+          <ScalarProperty Name="Title" ColumnName="Title" />
+          <ScalarProperty Name="Author" ColumnName="Author" />
+          <ScalarProperty Name="Isbn" ColumnName="Isbn" />
+          <ScalarProperty Name="Publisher" ColumnName="Publisher" />
+          <ScalarProperty Name="PageCount" ColumnName="PageCount" />
+          <ScalarProperty Name="DocType" ColumnName="DocType" />
+          <ScalarProperty Name="Series" ColumnName="Series" />
+          <ScalarProperty Name="Awards" ColumnName="Awards" />
+          <ScalarProperty Name="Summary" ColumnName="Summary" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="ContentRecords">
+      <EntityTypeMapping TypeName="IsTypeOf(bookcaveModel.ContentRecord)">
+        <MappingFragment StoreEntitySet="ContentRecords">
+          <ScalarProperty Name="Isbn13" ColumnName="Isbn13" />
+          <ScalarProperty Name="ScholasticGradeHigher" ColumnName="ScholasticGradeHigher" />
+          <ScalarProperty Name="ScholasticGradeLower" ColumnName="ScholasticGradeLower" />
+          <ScalarProperty Name="BarnesAgeYoung" ColumnName="BarnesAgeYoung" />
+          <ScalarProperty Name="BarnesAgeOld" ColumnName="BarnesAgeOld" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="RatingRecords">
+      <EntityTypeMapping TypeName="IsTypeOf(bookcaveModel.RatingRecord)">
+        <MappingFragment StoreEntitySet="RatingRecords">
+          <ScalarProperty Name="Isbn13" ColumnName="Isbn13" />
+          <ScalarProperty Name="BarnesAvg" ColumnName="BarnesAvg" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+    <EntitySetMapping Name="SkillRecords">
+      <EntityTypeMapping TypeName="IsTypeOf(bookcaveModel.SkillRecord)">
+        <MappingFragment StoreEntitySet="SkillRecords">
+          <ScalarProperty Name="Isbn13" ColumnName="Isbn13" />
+          <ScalarProperty Name="ScholasticGrade" ColumnName="ScholasticGrade" />
+          <ScalarProperty Name="Dra" ColumnName="Dra" />
+          <ScalarProperty Name="LexScore" ColumnName="LexScore" />
+          <ScalarProperty Name="GuidedReading" ColumnName="GuidedReading" />
+          <ScalarProperty Name="LexCode" ColumnName="LexCode" />
+          <ScalarProperty Name="LexUpdate" ColumnName="LexUpdate" />
+        </MappingFragment>
+      </EntityTypeMapping>
+    </EntitySetMapping>
+  </EntityContainerMapping>
+</Mapping></edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="True" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="True" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>
