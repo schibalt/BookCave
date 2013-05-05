@@ -8,8 +8,8 @@
 
 SET QUOTED_IDENTIFIER OFF;
 GO
-USE [bookcave];
-GO
+--USE [bookcave];
+--GO
 IF SCHEMA_ID(N'dbo') IS NULL EXECUTE(N'CREATE SCHEMA [dbo]');
 GO
 

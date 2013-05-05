@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BookCave.Service.Entities;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,70 +9,73 @@ using System.Threading.Tasks;
 
 namespace BookCave.Service
 {
-    public class AggregationFunctions
+    public class DataFunctions
     {
         private const double GRADEAGEOFFSET = 5.5;
 
-        public static double AggregateContent(byte? scholasticGradeHigher, string scholasticGradeLower, byte? barnesAgeYoung, byte? barnesAgeOld)
+        public static double GetContentAverageAge(ContentRecord contentRecord)
         {
-            double aggregateContent = double.NegativeInfinity;
+            var averageAge = double.NegativeInfinity;
             var contentMetrics = new List<double>();
 
-            var scholasticOlder = (double)scholasticGradeHigher + GRADEAGEOFFSET;
-            contentMetrics.Add(scholasticOlder);
+            if (contentRecord.ScholasticGradeHigher != null)
+            {
+                var scholasticOlder = (double)contentRecord.ScholasticGradeHigher + GRADEAGEOFFSET;
+                contentMetrics.Add(scholasticOlder);
+            }
 
-            if (scholasticGradeLower.Equals("K"))
-                scholasticGradeLower = "0";
-            var scholasticYounger = Convert.ToDouble(scholasticGradeLower) + GRADEAGEOFFSET;
-            contentMetrics.Add(scholasticYounger);
+            if (contentRecord.ScholasticGradeLower != null)
+            {
+                if (contentRecord.ScholasticGradeLower.Equals("K"))
+                    contentRecord.ScholasticGradeLower = "0";
 
-            if (barnesAgeOld != null)
-                contentMetrics.Add((double)barnesAgeOld);
+                var scholasticYounger = Convert.ToDouble(contentRecord.ScholasticGradeLower) + GRADEAGEOFFSET;
+                contentMetrics.Add((double)scholasticYounger);
+            }
 
-            if (barnesAgeYoung != null)
-                contentMetrics.Add((double)barnesAgeYoung);
+            if (contentRecord.BarnesAgeOld != null) contentMetrics.Add((double)contentRecord.BarnesAgeOld);
+
+            if (contentRecord.BarnesAgeYoung != null) contentMetrics.Add((double)contentRecord.BarnesAgeYoung);
+
+            if (contentRecord.CommonSensePause != null) contentMetrics.Add((double)contentRecord.CommonSenseOn);
+
+            if (contentRecord.CommonSensePause != null) contentMetrics.Add((double)contentRecord.CommonSensePause);
+
+            if (contentRecord.CommonSenseNoKids != null) if ((bool)contentRecord.CommonSenseNoKids) contentMetrics.Add(double.PositiveInfinity);
 
             if (contentMetrics.Count > 0)
-                aggregateContent = contentMetrics.Average();
+                averageAge = contentMetrics.Average();
 
-            return aggregateContent;
+            return averageAge;
         }
 
-        public static double AggregateSkill(double? scholasticGrade, string dra, short? lexScore, string guidedReading)
+        public static double? GetAverageSkillAge(SkillRecord skillRecord)
         {
-            double aggregateAge = double.NegativeInfinity;
+            double? averageAge = null;
 
             var skillMetrics = new List<double>();
 
-            if (dra != null)
+            if (skillRecord.Dra != null)
             {
-                var aggregateDra = ComputeDra(dra);
-                if (aggregateDra != double.NegativeInfinity)
-                    skillMetrics.Add(aggregateDra);
+                var draAge = ComputeDra(skillRecord.Dra);
+                if (draAge != double.NegativeInfinity)
+                    skillMetrics.Add(draAge);
             }
 
-            if (scholasticGrade != null)
-                skillMetrics.Add(ComputeScholasticGrade(scholasticGrade));
+            if (skillRecord.ScholasticGrade != null) skillMetrics.Add(ComputeScholasticGrade(skillRecord.ScholasticGrade));
 
-            if (guidedReading != null)
-                skillMetrics.Add(ComputeGuidedReading(guidedReading));
+            if (skillRecord.GuidedReading != null) skillMetrics.Add(ComputeGuidedReading(skillRecord.GuidedReading));
 
-            if (lexScore > 0)
-                skillMetrics.Add((double)ComputeLexileQuadratic(lexScore));
+            if (skillRecord.LexScore > 0) skillMetrics.Add((double)ComputeLexileQuadratic(skillRecord.LexScore));
 
-            if (skillMetrics.Count > 0)
-                aggregateAge = skillMetrics.Average();
+            if (skillMetrics.Count > 0) averageAge = skillMetrics.Average();
 
-            return aggregateAge;
+            return averageAge;
         }
 
         private static double ComputeScholasticGrade(double? scholasticGrade)
         {
-            if (scholasticGrade != null)
-            {
-                var age = (double)scholasticGrade + GRADEAGEOFFSET;
-                return age;
-            }
+            if (scholasticGrade != null) { var age = (double)scholasticGrade + GRADEAGEOFFSET; return age; }
             return double.NegativeInfinity;
         }
 
@@ -83,11 +87,7 @@ namespace BookCave.Service
 
             int sum = 0;
 
-            for (int i = 0; i < characters.Length; i++)
-            {
-                sum *= 26;
-                sum += (characters[i] - 'A' + 1);
-            }
+            for (int i = 0; i < characters.Length; i++) { sum *= 26; sum += (characters[i] - 'A' + 1); }
 
             var grade = 0.2297 * sum + 0.047; //linear formula from scholastic leveling chart
             //http://teacher.scholastic.com/products/guidedreading/leveling_chart.htm
@@ -119,8 +119,7 @@ namespace BookCave.Service
                 r = new Regex("(\\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline);
                 m = r.Match(dra);
 
-                if (m.Success)
-                    nvDra = Convert.ToInt32(m.Groups[1].ToString());
+                if (m.Success) nvDra = Convert.ToInt32(m.Groups[1].ToString());
             }
             var grade = 0.07 * nvDra + 1.2394; //linear formula from scholastic leveling chart
             var age = grade + GRADEAGEOFFSET;

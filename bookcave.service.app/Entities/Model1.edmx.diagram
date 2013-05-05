@@ -7,7 +7,7 @@
       <Diagram DiagramId="47ae00191c484b5ba5b0ffe57c0a629f" Name="Diagram1">
         <EntityTypeShape EntityType="bookcaveModel.BookRecord" Width="1.5" PointX="0.75" PointY="3.375" IsExpanded="true" />
         <EntityTypeShape EntityType="bookcaveModel.ContentRecord" Width="1.875" PointX="3" PointY="1.25" IsExpanded="true" />
-        <EntityTypeShape EntityType="bookcaveModel.RatingRecord" Width="1.5" PointX="3" PointY="4.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="bookcaveModel.RatingRecord" Width="1.5" PointX="3" PointY="4.375" IsExpanded="true" />
         <EntityTypeShape EntityType="bookcaveModel.SkillRecord" Width="1.5" PointX="3" PointY="6.5" IsExpanded="true" />
         <AssociationConnector Association="bookcaveModel.FK_BookRating" ManuallyRouted="false" />
         <AssociationConnector Association="bookcaveModel.FK_BookSkill" ManuallyRouted="false" />

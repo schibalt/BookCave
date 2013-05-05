@@ -30,7 +30,7 @@
     <Property Name="Isbn13" Type="nvarchar" Nullable="false" MaxLength="13" />
     <Property Name="Title" Type="nvarchar(max)" Nullable="false" />
     <Property Name="Author" Type="nvarchar(max)" Nullable="true" />
-    <Property Name="Isbn" Type="nvarchar(max)" Nullable="false" />
+    <Property Name="Isbn" Type="nvarchar(max)" Nullable="true" />
     <Property Name="Publisher" Type="nvarchar(max)" Nullable="false" />
     <Property Name="PageCount" Type="smallint" Nullable="true" />
     <Property Name="DocType" Type="nvarchar(max)" Nullable="true" />
@@ -43,10 +43,14 @@
       <PropertyRef Name="Isbn13" />
     </Key>
     <Property Name="Isbn13" Type="nvarchar" Nullable="false" MaxLength="13" />
-    <Property Name="ScholasticGradeHigher" Type="tinyint" Nullable="true" />
     <Property Name="ScholasticGradeLower" Type="nvarchar" Nullable="true" MaxLength="2" />
+    <Property Name="ScholasticGradeHigher" Type="tinyint" Nullable="true" />
     <Property Name="BarnesAgeYoung" Type="tinyint" Nullable="true" />
     <Property Name="BarnesAgeOld" Type="tinyint" Nullable="true" />
+    <Property Name="CommonSensePause" Type="tinyint" Nullable="true" />
+    <Property Name="CommonSenseOn" Type="tinyint" Nullable="true" />
+    <Property Name="CommonSenseNoKids" Type="bit" Nullable="true" />
+    <Property Name="AverageContentAge" Type="float" Nullable="true" />
   </EntityType>
   <EntityType Name="RatingRecords">
     <Key>
@@ -66,6 +70,7 @@
     <Property Name="Isbn13" Type="nvarchar" Nullable="false" MaxLength="13" />
     <Property Name="LexCode" Type="nvarchar(max)" Nullable="true" />
     <Property Name="LexUpdate" Type="datetime" Nullable="true" />
+    <Property Name="AverageSkillAge" Type="float" Nullable="true" />
   </EntityType>
   <Association Name="FK_BookRating">
     <End Role="BookRecords" Type="bookcaveModel.Store.BookRecords" Multiplicity="1" />
@@ -132,7 +137,7 @@
           <Property Name="Isbn13" Type="String" Nullable="false" MaxLength="13" Unicode="true" FixedLength="false" />
           <Property Name="Title" Type="String" Nullable="false" MaxLength="Max" Unicode="true" FixedLength="false" />
           <Property Name="Author" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
-          <Property Name="Isbn" Type="String" Nullable="false" MaxLength="Max" Unicode="true" FixedLength="false" />
+          <Property Name="Isbn" Type="String" Nullable="true" MaxLength="Max" Unicode="true" FixedLength="false" />
           <Property Name="Publisher" Type="String" Nullable="false" MaxLength="Max" Unicode="true" FixedLength="false" />
           <Property Name="PageCount" Type="Int16" Nullable="true" />
           <Property Name="DocType" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" Nullable="true" />
@@ -148,18 +153,22 @@
             <PropertyRef Name="Isbn13" />
           </Key>
           <Property Name="Isbn13" Type="String" Nullable="false" MaxLength="13" Unicode="true" FixedLength="false" />
-          <Property Name="ScholasticGradeHigher" Type="Byte" />
           <Property Name="ScholasticGradeLower" Type="String" MaxLength="2" Unicode="true" FixedLength="false" Nullable="true" />
-          <Property Name="BarnesAgeYoung" Type="Byte" />
-          <Property Name="BarnesAgeOld" Type="Byte" />
+          <Property Name="ScholasticGradeHigher" Type="Byte" />
+          <Property Name="BarnesAgeYoung" Type="Byte" Nullable="true" />
+          <Property Name="BarnesAgeOld" Type="Byte" Nullable="true" />
           <NavigationProperty Name="BookRecord" Relationship="bookcaveModel.FK_ContentBook" FromRole="ContentRecords" ToRole="BookRecords" />
+          <Property Type="Byte" Name="CommonSensePause" Nullable="true" />
+          <Property Type="Byte" Name="CommonSenseOn" Nullable="true" />
+          <Property Type="Boolean" Name="CommonSenseNoKids" Nullable="true" />
+          <Property Type="Double" Name="AverageContentAge" Nullable="true" />
         </EntityType>
         <EntityType Name="RatingRecord">
           <Key>
             <PropertyRef Name="Isbn13" />
           </Key>
           <Property Name="Isbn13" Type="String" Nullable="false" MaxLength="13" Unicode="true" FixedLength="false" />
-          <Property Name="BarnesAvg" Type="Double" />
+          <Property Name="BarnesAvg" Type="Double" Nullable="true" />
           <NavigationProperty Name="BookRecord" Relationship="bookcaveModel.FK_BookRating" FromRole="RatingRecords" ToRole="BookRecords" />
         </EntityType>
         <EntityType Name="SkillRecord">
@@ -174,6 +183,7 @@
           <Property Name="LexCode" Type="String" MaxLength="Max" Unicode="true" FixedLength="false" />
           <Property Name="LexUpdate" Type="DateTime" Precision="3" />
           <NavigationProperty Name="BookRecord" Relationship="bookcaveModel.FK_BookSkill" FromRole="SkillRecords" ToRole="BookRecords" />
+          <Property Type="Double" Name="AverageSkillAge" Nullable="true" />
         </EntityType>
         <Association Name="FK_BookRating">
           <End Role="BookRecords" Type="bookcaveModel.BookRecord" Multiplicity="1" />
@@ -237,10 +247,14 @@
       <EntityTypeMapping TypeName="IsTypeOf(bookcaveModel.ContentRecord)">
         <MappingFragment StoreEntitySet="ContentRecords">
           <ScalarProperty Name="Isbn13" ColumnName="Isbn13" />
-          <ScalarProperty Name="ScholasticGradeHigher" ColumnName="ScholasticGradeHigher" />
           <ScalarProperty Name="ScholasticGradeLower" ColumnName="ScholasticGradeLower" />
+          <ScalarProperty Name="ScholasticGradeHigher" ColumnName="ScholasticGradeHigher" />
           <ScalarProperty Name="BarnesAgeYoung" ColumnName="BarnesAgeYoung" />
           <ScalarProperty Name="BarnesAgeOld" ColumnName="BarnesAgeOld" />
+          <ScalarProperty Name="CommonSensePause" ColumnName="CommonSensePause" />
+          <ScalarProperty Name="CommonSenseOn" ColumnName="CommonSenseOn" />
+          <ScalarProperty Name="CommonSenseNoKids" ColumnName="CommonSenseNoKids" />
+          <ScalarProperty Name="AverageContentAge" ColumnName="AverageContentAge" />
         </MappingFragment>
       </EntityTypeMapping>
     </EntitySetMapping>
@@ -262,6 +276,7 @@
           <ScalarProperty Name="GuidedReading" ColumnName="GuidedReading" />
           <ScalarProperty Name="LexCode" ColumnName="LexCode" />
           <ScalarProperty Name="LexUpdate" ColumnName="LexUpdate" />
+          <ScalarProperty Name="AverageSkillAge" ColumnName="AverageSkillAge" />
         </MappingFragment>
       </EntityTypeMapping>
     </EntitySetMapping>

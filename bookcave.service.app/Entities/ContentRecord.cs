@@ -15,10 +15,14 @@ namespace BookCave.Service.Entities
     public partial class ContentRecord
     {
         public string Isbn13 { get; set; }
-        public Nullable<byte> ScholasticGradeHigher { get; set; }
         public string ScholasticGradeLower { get; set; }
+        public Nullable<byte> ScholasticGradeHigher { get; set; }
         public Nullable<byte> BarnesAgeYoung { get; set; }
         public Nullable<byte> BarnesAgeOld { get; set; }
+        public Nullable<byte> CommonSensePause { get; set; }
+        public Nullable<byte> CommonSenseOn { get; set; }
+        public Nullable<bool> CommonSenseNoKids { get; set; }
+        public Nullable<double> AverageContentAge { get; set; }
     
         public virtual BookRecord BookRecord { get; set; }
     }

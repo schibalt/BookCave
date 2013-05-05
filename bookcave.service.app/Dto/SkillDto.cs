@@ -27,6 +27,6 @@ namespace BookCave.Service.Dto
         public System.DateTime LexUpdate { get; set; }
 
         [DataMember]
-        public double AggregateSkill { get; set; }
+        public double? AggregateSkill { get; set; }
     }
 }

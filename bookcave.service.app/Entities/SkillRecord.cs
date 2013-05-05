@@ -21,6 +21,7 @@ namespace BookCave.Service.Entities
         public string Isbn13 { get; set; }
         public string LexCode { get; set; }
         public Nullable<System.DateTime> LexUpdate { get; set; }
+        public Nullable<double> AverageSkillAge { get; set; }
     
         public virtual BookRecord BookRecord { get; set; }
     }
