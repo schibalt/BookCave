@@ -39,7 +39,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\..\Program Files (x86)\Apprenda\SDK\API Files\Apprenda.Logging.NLog.dll</HintPath>
     </Reference>
-    <Reference Include="BookCave.Service">
+    <Reference Include="BookCave.Service, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\BookCave.Service.App\bin\Release\BookCave.Service.dll</HintPath>
     </Reference>
     <Reference Include="System" />

@@ -8,7 +8,6 @@ using AutoMapper;
 using System.Text.RegularExpressions;
 using BookCave.Service.Dto;
 using System.Data.Entity.Infrastructure;
-using System.Data.Objects;
 using BookCave.Service.Entities;
 using System.Text;
 
@@ -17,7 +16,7 @@ namespace BookCave.Service
     public class BookService : IBook
     {
         // Set the log source
-        private readonly ILogger log = LogManager.Instance().GetLogger(typeof(BookService));
+        //private readonly ILogger log = LogManager.Instance().GetLogger(typeof(BookService));
 
         private bool LexileRecordVerified(LexileDto lexileDto)
         {
@@ -60,91 +59,6 @@ namespace BookCave.Service
             }
 
             return false;
-        }
-
-        /// <summary>
-        ///     Adds or updates a single book in the books database
-        /// </summary>
-        /// <param name="lexileDto">book to add</param>
-        /// <returns></returns>
-        public ResultDto PostLexileData(LexileDto lexileDto)
-        {
-            if (!LexileRecordVerified(lexileDto))
-                return new ResultDto { ResultDescription = "bad object" };
-
-            Mapper.CreateMap<LexileDto, SkillRecord>();
-            using (var context = new BookcaveEntities())
-            {
-                //var recordQuery = context.SkillRecords.Where(book => book.Isbn13.Equals(lexileDto.Isbn13));
-                var recordQuery = context.Database.SqlQuery<SkillRecord>("Select * from SkillRecords where Isbn13 = {0}", lexileDto.Isbn13);
-                //var currentSkillRecord = skillRecords.FirstOrDefault();
-                var skillRecords = new List<SkillRecord>(recordQuery);
-                SkillRecord currentSkillRecord = null;
-
-                if (skillRecords.Count > 0)
-                    currentSkillRecord = skillRecords.First();
-
-                if (currentSkillRecord != null)
-                {
-                    var modifiedSkillRecord = Mapper.Map<LexileDto, SkillRecord>(lexileDto, currentSkillRecord);
-                    var aggregateSkill = DataFunctions.GetAverageSkillAge(modifiedSkillRecord);
-                    context.Database.ExecuteSqlCommand
-                    (
-                        "update dbo.SkillRecords set LexScore={0},LexCode={1},LexUpdate={2},AverageSkillAge={3} where Isbn13={4}",
-                        lexileDto.LexScore,
-                        lexileDto.LexCode,
-                        lexileDto.LexUpdate,
-                        aggregateSkill,
-                        lexileDto.Isbn13
-                    );
-                }
-                else
-                {
-                    var newSkillRecord = Mapper.Map<LexileDto, SkillRecord>(lexileDto);
-                    newSkillRecord.AverageSkillAge = DataFunctions.GetAverageSkillAge(newSkillRecord);
-                    context.SkillRecords.Add(newSkillRecord);
-                }
-
-                Mapper.CreateMap<LexileDto, BookRecord>();
-                var bookQuery = context.Database.SqlQuery<BookRecord>("Select * from BookRecords where Isbn13 = {0}", lexileDto.Isbn13);
-                //var bookQuery = context.BookRecords.Where(book => book.Isbn13.Equals(lexileDto.Isbn13));
-                var bookRecords = new List<BookRecord>(bookQuery);
-                BookRecord currentBookRecord = null;
-
-                if (bookRecords.Count > 0)
-                    currentBookRecord = bookRecords[0];
-                //var currentBookRecord = bookRecords.FirstOrDefault();
-
-                if (currentBookRecord != null)
-                {
-                    //currentBookRecord = Mapper.Map<LexileDto, BookRecord>(lexileDto, currentBookRecord);
-                    context.Database.ExecuteSqlCommand
-                    (
-                        "update dbo.BookRecords set Title={0},Author={1},Publisher={2},PageCount={3},DocType={4},Series={5},Awards={6},Summary={7}",
-                        lexileDto.Title,
-                        lexileDto.Author,
-                        lexileDto.Publisher,
-                        lexileDto.PageCount,
-                        lexileDto.DocType,
-                        lexileDto.Series,
-                        lexileDto.Awards,
-                        lexileDto.Summary
-                    );
-                }
-                else
-                {
-                    var newBookRecord = Mapper.Map<LexileDto, BookRecord>(lexileDto);
-                    context.BookRecords.Add(newBookRecord);
-                }
-
-                context.SaveChanges();
-                //try
-                //{
-                //}
-                //catch (DbEntityValidationException e) { Console.WriteLine(e.Message); }
-                //catch (DbUpdateException e) { Console.WriteLine(e.Message); }
-            }
-            return new ResultDto { ResultDescription = "success" };
         }
 
         /// <summary>
@@ -215,7 +129,7 @@ namespace BookCave.Service
                 var contentDto = Mapper.Map<ContentRecord, ContentDto>(contentRecord);
 
                 //get aggregated content score, assign to DTO property, then return
-                var aggregateContent = DataFunctions.GetContentAverageAge(contentRecord);
+                var aggregateContent = DataFunctions.GetAverageContentAge(contentRecord);
                 contentDto.AggregateContent = aggregateContent;
                 return contentDto;
             }
@@ -233,7 +147,7 @@ namespace BookCave.Service
         /// <returns>list of books</returns>
         public List<SuperDto> GetBooks(string content, string title, string skill, string author, string summary)
         {
-            log.Debug("Enter " + MethodBase.GetCurrentMethod().Name);
+            //log.Debug("Enter " + MethodBase.GetCurrentMethod().Name);
             // all of the incoming strings will be html encoded, so they must be decoded
             // example:
             // skill = System.Net.WebUtility.HtmlDecode(skill);
@@ -255,13 +169,13 @@ namespace BookCave.Service
 
                 const double window = 1;
 
-               var booksBySkill = new List<SuperRecord>();
+                var booksBySkill = new List<SuperRecord>();
 
-               var queryBySkill = new StringBuilder(query.ToString());
+                var queryBySkill = new StringBuilder(query.ToString());
                 queryBySkill.Append(" where SkillRecords.AverageSkillAge>={0} and SkillRecords.AverageSkillAge<{1}");
                 if (skill != null)
                 {
-                    log.Debug("skill: " + skill);
+                    //log.Debug("skill: " + skill);
                     // lexile should be in one of 2 formats:
                     // min:max (10:20)
                     // score (30)
@@ -288,17 +202,16 @@ namespace BookCave.Service
                     else
                     {
                         var nvSkill = Convert.ToDouble(skill);
-                        booksBySkill = context.Database.SqlQuery<SuperRecord>(queryBySkill.ToString(), nvSkill , nvSkill + window).ToList();
+                        booksBySkill = context.Database.SqlQuery<SuperRecord>(queryBySkill.ToString(), nvSkill, nvSkill + window).ToList();
                     }
                 }
 
-                var booksByContent= new List<SuperRecord>();
+                var booksByContent = new List<SuperRecord>();
                 var queryByContent = new StringBuilder(query.ToString()); ;
                 queryByContent.Append(" where ContentRecords.AverageContentAge>={0} and ContentRecords.AverageContentAge<{1}");
                 if (content != null)
                 {
-                    var nvContent = Convert.ToDouble(content);
-                    log.Debug("age: " + content);
+                    //log.Debug("age: " + content);
                     // age should be in one of 2 formats:
                     // min:max (15:16)
                     // age (12)
@@ -309,8 +222,8 @@ namespace BookCave.Service
                         var int2 = m.Groups[3].ToString();
 
                         //swap the range values if necessary
-                        var lower = Convert.ToInt32(int1);
-                        var higher = Convert.ToInt32(int2);
+                        var lower = Convert.ToDouble(int1);
+                        var higher = Convert.ToDouble(int2);
 
                         if (lower > higher) //if the values are in the wrong order
                         {
@@ -323,11 +236,12 @@ namespace BookCave.Service
                     }
                     else
                     {
-                        booksByContent = context.Database.SqlQuery<SuperRecord>(queryByContent.ToString(), nvContent , nvContent + window).ToList();
+                        var nvContent = Convert.ToDouble(content);
+                        booksByContent = context.Database.SqlQuery<SuperRecord>(queryByContent.ToString(), nvContent, nvContent + window).ToList();
                     }
                 }
 
-                var booksByTitle= new List<SuperRecord>();
+                var booksByTitle = new List<SuperRecord>();
                 var queryByTitle = new StringBuilder(query.ToString()); ;
                 queryByTitle.Append(" where title like {0}");
 
@@ -336,21 +250,21 @@ namespace BookCave.Service
                     var annotatedTitle = '%' + title + '%';
 
                     booksByTitle = context.Database.SqlQuery<SuperRecord>(queryByTitle.ToString(), annotatedTitle).ToList();
-                    log.Debug("title: " + title);
+                    //log.Debug("title: " + title);
                 }
 
-               var booksByAuthor= new List<SuperRecord>();
-               var queryByAuthor = new StringBuilder(query.ToString()); ;
+                var booksByAuthor = new List<SuperRecord>();
+                var queryByAuthor = new StringBuilder(query.ToString()); ;
                 queryByAuthor.Append(" where author like {0}");
 
                 if (author != null)
                 {
                     var annotatedAuthor = '%' + author + '%';
                     booksByAuthor = context.Database.SqlQuery<SuperRecord>(queryByAuthor.ToString(), annotatedAuthor).ToList();
-                    log.Debug("author: " + author);
+                    //log.Debug("author: " + author);
                 }
 
-                var booksBySummary= new List<SuperRecord>();
+                var booksBySummary = new List<SuperRecord>();
                 var queryBySummary = new StringBuilder(query.ToString()); ;
                 queryBySummary.Append(" where summary like {0}");
 
@@ -358,12 +272,12 @@ namespace BookCave.Service
                 {
                     var annotatedSummary = '%' + summary + '%';
                     booksBySummary = context.Database.SqlQuery<SuperRecord>(queryBySummary.ToString(), annotatedSummary).ToList();
-                    log.Debug("summary: " + summary);
+                    //log.Debug("summary: " + summary);
                 }
 
                 // combine query parameters and execute query against the database
                 // return the result
-                log.Debug("Exit " + MethodBase.GetCurrentMethod().Name);
+                //log.Debug("Exit " + MethodBase.GetCurrentMethod().Name);
 
                 /*
                  * this method has to return the intersection of the various result sets.
@@ -390,15 +304,15 @@ namespace BookCave.Service
                 IEnumerable<SuperRecord> dalResultSet = new List<SuperRecord>();
 
                 foreach (var set in resultSetsPerCriterion)
-                    if (set.Count() > 0)
+                    if (set.Count() > 0)//don't bother with the set if it doesn't have anything in it
                     {
-                        if (dalResultSet.Count() > 0)
+                        if (dalResultSet.Count() > 0)//intersect current set w/master set
 
                             dalResultSet = from result in dalResultSet
                                            join record in set on result.Isbn13 equals record.Isbn13
                                            select (SuperRecord)result;
-                        else
-                            dalResultSet = dalResultSet.Union(set) ;
+                        else//for the first set w/something in it, add the first records to the master set
+                            dalResultSet = dalResultSet.Union(set);
                     }
 
                 var results = new List<SuperDto>();
@@ -427,16 +341,113 @@ namespace BookCave.Service
             return new ResultDto { ResultDescription = "Success" };
         }
 
+        /// <summary>
+        ///     Adds or updates a single book in the books database
+        /// </summary>
+        /// <param name="lexileDto">book to add</param>
+        /// <returns></returns>
+        public ResultDto PostLexileData(LexileDto lexileDto)
+        {
+            if (!LexileRecordVerified(lexileDto))
+                return new ResultDto { ResultDescription = "bad object" };
+
+            Mapper.CreateMap<LexileDto, SkillRecord>();
+            using (var context = new BookcaveEntities())
+            {
+                //var recordQuery = context.SkillRecords.Where(book => book.Isbn13.Equals(lexileDto.Isbn13));
+                var recordQuery = context.Database.SqlQuery<SkillRecord>("Select * from SkillRecords where Isbn13 = {0}", lexileDto.Isbn13);
+                //var currentSkillRecord = skillRecords.FirstOrDefault();
+                var skillRecords = new List<SkillRecord>(recordQuery);
+                SkillRecord currentSkillRecord = null;
+
+                if (skillRecords.Count > 0)
+                    currentSkillRecord = skillRecords.First();
+
+                if (currentSkillRecord != null)
+                {
+                    var modifiedSkillRecord = Mapper.Map<LexileDto, SkillRecord>(lexileDto, currentSkillRecord);
+                    var aggregateSkill = DataFunctions.GetAverageSkillAge(modifiedSkillRecord);
+                    context.Database.ExecuteSqlCommand
+                    (
+                        "update SkillRecords set LexScore={0},LexCode={1},LexUpdate={2},AverageSkillAge={3} where Isbn13={4}",
+                        lexileDto.LexScore,
+                        lexileDto.LexCode,
+                        lexileDto.LexUpdate,
+                        aggregateSkill,
+                        lexileDto.Isbn13
+                    );
+                }
+                else
+                {
+                    var newSkillRecord = Mapper.Map<LexileDto, SkillRecord>(lexileDto);
+                    newSkillRecord.AverageSkillAge = DataFunctions.GetAverageSkillAge(newSkillRecord);
+                    context.SkillRecords.Add(newSkillRecord);
+                }
+
+                Mapper.CreateMap<LexileDto, BookRecord>();
+                var bookQuery = context.Database.SqlQuery<BookRecord>("Select * from BookRecords where Isbn13 = {0}", lexileDto.Isbn13);
+                //var bookQuery = context.BookRecords.Where(book => book.Isbn13.Equals(lexileDto.Isbn13));
+                var bookRecords = new List<BookRecord>(bookQuery);
+                BookRecord currentBookRecord = null;
+
+                if (bookRecords.Count > 0)
+                    currentBookRecord = bookRecords[0];
+                //var currentBookRecord = bookRecords.FirstOrDefault();
+
+                if (currentBookRecord != null)
+                {
+                    //currentBookRecord = Mapper.Map<LexileDto, BookRecord>(lexileDto, currentBookRecord);
+                    context.Database.ExecuteSqlCommand
+                    (
+                        "update BookRecords set Title={0},Author={1},Publisher={2},PageCount={3},DocType={4},Series={5},Awards={6},Summary={7} where Isbn13={8}",
+                        lexileDto.Title,
+                        lexileDto.Author,
+                        lexileDto.Publisher,
+                        lexileDto.PageCount,
+                        lexileDto.DocType,
+                        lexileDto.Series,
+                        lexileDto.Awards,
+                        lexileDto.Summary,
+                        lexileDto.Isbn13
+                    );
+                    context.SaveChanges();
+                    return new ResultDto { ResultDescription = lexileDto.Isbn13 + " updated" };
+                }
+                else
+                {
+                    var newBookRecord = Mapper.Map<LexileDto, BookRecord>(lexileDto);
+                    context.BookRecords.Add(newBookRecord);
+                    context.SaveChanges();
+                    return new ResultDto { ResultDescription = lexileDto.Isbn13 + " added" };
+                }
+
+                //try
+                //{
+                //}
+                //catch (DbEntityValidationException e) { Console.WriteLine(e.Message); }
+                //catch (DbUpdateException e) { Console.WriteLine(e.Message); }
+            }
+        }
+
         public ResultDto PostBarnesData(BarnesDto barnesDto)
         {
             using (var context = new BookcaveEntities())
             {
+                var bookRecords = context.Database.SqlQuery<BookRecord>("Select * from BookRecords where Isbn13 = {0}", barnesDto.Isbn13);
+                if (bookRecords.FirstOrDefault() == null)
+                    return new ResultDto { ResultDescription = "no general info exists yet for " + barnesDto.Isbn13 };
+
                 var ratingRecords = context.Database.SqlQuery<RatingRecord>("Select * from RatingRecords where Isbn13 = {0}", barnesDto.Isbn13);
                 var currentRatingRecord = ratingRecords.FirstOrDefault();
                 Mapper.CreateMap<BarnesDto, RatingRecord>();
 
                 if (currentRatingRecord != null)
-                    currentRatingRecord = Mapper.Map<BarnesDto, RatingRecord>(barnesDto, currentRatingRecord);
+                {
+                    var modifiedRatingRecord = Mapper.Map<BarnesDto, RatingRecord>(barnesDto, currentRatingRecord);
+                    context.Database.ExecuteSqlCommand("update RatingRecords set BarnesAvg={0} where Isbn13={1}",
+                        barnesDto.BarnesAvg,
+                        barnesDto.Isbn13);
+                }
                 else
                 {
                     var newRatingRecord = Mapper.Map<BarnesDto, RatingRecord>(barnesDto);
@@ -448,45 +459,38 @@ namespace BookCave.Service
                 Mapper.CreateMap<BarnesDto, ContentRecord>();
 
                 if (currentContentRecord != null)
-                    currentContentRecord = Mapper.Map(barnesDto, currentContentRecord);
+                {
+                    var modifiedContentRecord = Mapper.Map(barnesDto, currentContentRecord);
+                    var averageContentAge = DataFunctions.GetAverageContentAge(modifiedContentRecord);
+                    context.Database.ExecuteSqlCommand
+                    (
+                        "update ContentRecords set BarnesAgeYoung={0},BarnesAgeOld={1},AverageContentAge={2} where Isbn13={3}",
+                        barnesDto.BarnesAgeYoung,
+                        barnesDto.BarnesAgeOld,
+                        averageContentAge,
+                        barnesDto.Isbn13
+                    );
+                    context.SaveChanges();
+                    return new ResultDto { ResultDescription = barnesDto.Isbn13 + " updated" };
+                }
                 else
                 {
                     var newContentRecord = Mapper.Map<BarnesDto, ContentRecord>(barnesDto);
+                    newContentRecord.AverageContentAge = DataFunctions.GetAverageContentAge(newContentRecord);
                     context.ContentRecords.Add(newContentRecord);
+                    context.SaveChanges();
+                    return new ResultDto { ResultDescription = barnesDto.Isbn13 + " added" };
                 }
 
-                context.SaveChanges();
-                try
-                {
-                }
-                catch (DbUpdateException e)
-                {
-                    Console.WriteLine("book metadata wasn't found in primary table.");
-                    return new ResultDto { ResultDescription = e.Message };
-                }
+                //try
+                //{
+                //}
+                //catch (DbUpdateException e)
+                //{
+                //    Console.WriteLine("book metadata wasn't found in primary table.");
+                //    return new ResultDto { ResultDescription = e.Message };
+                //}
             }
-
-            return new ResultDto { ResultDescription = "Updated" };
-        }
-
-        private ResultDto VerifyScholasticDto(ScholasticDto dto)
-        {
-            if (dto.GuidedReading.Length != 1 || !Char.IsLetter(Convert.ToChar(dto.GuidedReading)))
-                return new ResultDto { ResultDescription = "incorrect format for guided reading level property", ResultCode = -2 };
-
-            var re1 = "(\\d+)";	// lower dra bound
-            var re2 = "(-)";	// hyphen
-            var re3 = "(\\d+)";	// upper dra bound
-
-            var regexScoreRange = new Regex(re1 + re2 + re3, RegexOptions.IgnoreCase | RegexOptions.Singleline);
-            var matchScoreRange = regexScoreRange.Match(dto.Dra);
-            var regexScore = new Regex("(\\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline);
-            var matchScore = regexScore.Match(dto.Dra);
-
-            if (!matchScoreRange.Success && !matchScore.Success) //if the parameter is a range 
-                return new ResultDto { ResultDescription = "incorrect dra format ", ResultCode = -1 };
-
-            return new ResultDto { ResultDescription = "success" };
         }
 
         public ResultDto PostScholasticData(ScholasticDto scholasticDto)
@@ -496,21 +500,34 @@ namespace BookCave.Service
 
             var verificationResult = VerifyScholasticDto(scholasticDto);
 
-            if (verificationResult.ResultCode < 0)
-                return verificationResult;
+            //if (verificationResult.ResultCode < 0)
+            //    return verificationResult;
 
             using (var context = new BookcaveEntities())
             {
+                var bookRecords = context.Database.SqlQuery<BookRecord>("Select * from BookRecords where Isbn13 = {0}", scholasticDto.Isbn13);
+                if (bookRecords.FirstOrDefault() == null)
+                    return new ResultDto { ResultDescription = "no general info exists yet for " + scholasticDto.Isbn13 };
+
                 var skillRecords = context.Database.SqlQuery<SkillRecord>("Select * from SkillRecords where Isbn13 = {0}", scholasticDto.Isbn13);
                 var currentSkillRecord = skillRecords.FirstOrDefault();
                 Mapper.CreateMap<ScholasticDto, SkillRecord>();
 
                 if (currentSkillRecord != null)
-                    currentSkillRecord = Mapper.Map<ScholasticDto, SkillRecord>(scholasticDto, currentSkillRecord);
+                {
+                    var modifiedSkillRecord = Mapper.Map<ScholasticDto, SkillRecord>(scholasticDto, currentSkillRecord);
+                    var averageSkillAge = DataFunctions.GetAverageSkillAge(modifiedSkillRecord);
+                    context.Database.ExecuteSqlCommand("update SkillRecords set ScholasticGrade={0},Dra={1},GuidedReading={2},AverageSkillAge={3} where Isbn13={4}",
+                        scholasticDto.ScholasticGrade,
+                        scholasticDto.Dra,
+                        scholasticDto.GuidedReading,
+                        averageSkillAge,
+                        scholasticDto.Isbn13);
+                }
                 else
                 {
                     var newSkillRecord = Mapper.Map<ScholasticDto, SkillRecord>(scholasticDto);
-
+                    newSkillRecord.AverageSkillAge = DataFunctions.GetAverageSkillAge(newSkillRecord);
                     context.SkillRecords.Add(newSkillRecord);
                 }
 
@@ -519,28 +536,42 @@ namespace BookCave.Service
                 Mapper.CreateMap<ScholasticDto, ContentRecord>();
 
                 if (currentContentRecord != null)
-                    currentContentRecord = Mapper.Map<ScholasticDto, ContentRecord>(scholasticDto, currentContentRecord);
+                {
+                    var modifiedContentRecord = Mapper.Map<ScholasticDto, ContentRecord>(scholasticDto, currentContentRecord);
+                    var averageContentAge = DataFunctions.GetAverageContentAge(modifiedContentRecord);
+                    context.Database.ExecuteSqlCommand("update ContentRecords set ScholasticGradeLower={0}, ScholasticGradeHigher={1},AverageContentAge={2} where Isbn13={3}",
+                        scholasticDto.ScholasticGradeLower,
+                        scholasticDto.ScholasticGradeHigher,
+                        averageContentAge,
+                        scholasticDto.Isbn13);
+                    context.SaveChanges();
+                    return new ResultDto { ResultDescription = scholasticDto.Isbn13 + " updated" };
+                }
                 else
                 {
                     var newContentRecord = Mapper.Map<ScholasticDto, ContentRecord>(scholasticDto);
 
                     context.ContentRecords.Add(newContentRecord);
+                    context.SaveChanges();
+                    return new ResultDto { ResultDescription = scholasticDto.Isbn13 + " added" };
                 }
 
-                context.SaveChanges();
                 //try
                 //{
                 //}
                 //catch (DbEntityValidationException e) { Console.WriteLine(e.Message); }
                 //catch (DbUpdateException e) { Console.WriteLine(e.Message); }
             }
-            return new ResultDto { ResultDescription = "Updated" };
         }
 
         public ResultDto PostCommonSenseData(CommonSenseDto commonSenseDto)
         {
             using (var context = new BookcaveEntities())
             {
+                var bookRecords = context.Database.SqlQuery<BookRecord>("Select * from BookRecords where Isbn13 = {0}", commonSenseDto.Isbn13);
+                if (bookRecords.FirstOrDefault() == null)
+                    return new ResultDto { ResultDescription = "no general info exists yet for " + commonSenseDto.Isbn13 };
+
                 var contentRecords = context.Database.SqlQuery<ContentRecord>("Select * from ContentRecords where Isbn13 = {0}", commonSenseDto.Isbn13);
                 var currentContentRecord = contentRecords.FirstOrDefault();
                 Mapper.CreateMap<CommonSenseDto, ContentRecord>();
@@ -548,27 +579,71 @@ namespace BookCave.Service
                 if (currentContentRecord != null)
                 {
                     var modifiedContentRecord = Mapper.Map<CommonSenseDto, ContentRecord>(commonSenseDto, currentContentRecord);
-                    var aggregateContent = DataFunctions.GetContentAverageAge(modifiedContentRecord);
+                    var aggregateContent = DataFunctions.GetAverageContentAge(modifiedContentRecord);
                     context.Database.ExecuteSqlCommand
                     (
-                        "update dbo.ContentRecords set CommonSensePause={0},CommonSenseOn={1},CommonSenseNoKids={2},AverageContentAge={3} where Isbn13={4}",
+                        "update ContentRecords set CommonSensePause={0},CommonSenseOn={1},CommonSenseNoKids={2},AverageContentAge={3} where Isbn13={4}",
                         commonSenseDto.CommonSensePause,
                         commonSenseDto.CommonSenseOn,
                         commonSenseDto.CommonSenseNoKids,
                         aggregateContent,
                         commonSenseDto.Isbn13
                     );
+                    context.SaveChanges();
+                    return new ResultDto { ResultDescription = commonSenseDto.Isbn13 + " updated" };
                 }
                 else
                 {
                     var newContentRecord = Mapper.Map<CommonSenseDto, ContentRecord>(commonSenseDto);
-                    newContentRecord.AverageContentAge = DataFunctions.GetContentAverageAge(newContentRecord);
+                    newContentRecord.AverageContentAge = DataFunctions.GetAverageContentAge(newContentRecord);
                     context.ContentRecords.Add(newContentRecord);
+                    context.SaveChanges();
+                    return new ResultDto { ResultDescription = commonSenseDto.Isbn13 + " added" };
                 }
-
-                context.SaveChanges();
-                return new ResultDto { ResultDescription = "success" };
             }
+        }
+
+        private ResultDto VerifyScholasticDto(ScholasticDto scholasticDto)
+        {
+            if (scholasticDto.GuidedReading.Length != 1 || !Char.IsLetter(Convert.ToChar(scholasticDto.GuidedReading)))
+                //return new ResultDto { ResultDescription = "incorrect format for guided reading level property", ResultCode = -2 };
+                scholasticDto.GuidedReading = null;
+
+            var re1 = "(\\d+)";	// lower dra bound
+            var re2 = "(-)";	// hyphen
+            var re3 = "(\\d+)";	// upper dra bound
+
+            var regexScoreRange = new Regex(re1 + re2 + re3, RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var matchScoreRange = regexScoreRange.Match(scholasticDto.Dra);
+            var regexScore = new Regex("(\\d+)", RegexOptions.IgnoreCase | RegexOptions.Singleline);
+            var matchScore = regexScore.Match(scholasticDto.Dra);
+
+            if (!matchScoreRange.Success && !matchScore.Success) //if the parameter is a range 
+                scholasticDto.Dra = null;
+            //return new ResultDto { ResultDescription = "incorrect dra format ", ResultCode = -1 };
+
+            var notAllowed = new Hashtable();
+            notAllowed["ScholasticGradeLower"] = new List<object> { "" };
+
+            var dtoMembers = scholasticDto.GetType().GetMembers();
+
+            foreach (var member in dtoMembers)
+            {
+                var memberName = member.Name;
+                var property = scholasticDto.GetType().GetProperty(memberName);
+
+                if (property == null)
+                    continue;
+                var propertyValue = property.GetValue(scholasticDto);
+                var badValueList = notAllowed[memberName];
+
+                if (badValueList == null)
+                    continue;
+                if (((List<object>)badValueList).Contains(propertyValue))
+                    property.SetValue(scholasticDto, null);
+            }
+
+            return new ResultDto { ResultDescription = "verified" };
         }
     }
 }

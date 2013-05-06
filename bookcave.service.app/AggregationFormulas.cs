@@ -13,9 +13,9 @@ namespace BookCave.Service
     {
         private const double GRADEAGEOFFSET = 5.5;
 
-        public static double GetContentAverageAge(ContentRecord contentRecord)
+        public static double? GetAverageContentAge(ContentRecord contentRecord)
         {
-            var averageAge = double.NegativeInfinity;
+            double? averageAge = null;
             var contentMetrics = new List<double>();
 
             if (contentRecord.ScholasticGradeHigher != null)

@@ -2,7 +2,7 @@
 -- --------------------------------------------------
 -- Entity Designer DDL Script for SQL Server 2005, 2008, and Azure
 -- --------------------------------------------------
--- Date Created: 05/04/2013 20:01:00
+-- Date Created: 05/06/2013 11:55:06
 -- Generated from EDMX file: C:\Users\tiliska\Documents\Visual Studio 2012\Projects\BookCave\Bookcave.Service.App\Entities\Model1.edmx
 -- --------------------------------------------------
 

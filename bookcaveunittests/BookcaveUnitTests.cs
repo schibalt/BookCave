@@ -12,19 +12,22 @@ namespace BookcaveUnitTests
     [TestClass]
     public class BookcaveUnitTests
     {
-        [TestMethod]
-        public void TestPostBarnesDataInMemory()
-        {
-            ParseBarnesData("instance");
-        }
+        //[TestMethod]
+        //public void TestScriptModificationCmdlet()
+        //{
+        //    var cmdlet = new DeploymentCmdlet();
+        //    cmdlet.AppProvisioningPath=@"C:\Users\tiliska\Documents\script.sql"
+        //        cmdlet.
+        //}
+
+        private const string cloudUrl = @"http://apps.my.apprendacloud.com/api/services/json/r/bookcavetest(v1)/BookService/IBook/";
+        private const string localUrl = @"http://apps.apprenda.local/api/services/json/r/bookcavetest(v1)/BookService/IBook/";
+        private const bool useCloud = false;
+        private const bool post = false;
+        private Uri uri;
 
         [TestMethod]
-        public void TestPostBarnesDataOverWire()
-        {
-            ParseBarnesData("post");
-        }
-
-        private void ParseBarnesData(string method)
+        public void PostBarnesData()
         {
             // Create an instance of StreamReader to read from a file. 
             // The using statement also closes the StreamReader. 
@@ -33,12 +36,13 @@ namespace BookcaveUnitTests
                 string svLine;
                 // Read and display lines from the file until the end of  
                 // the file is reached. 
+                var webClient = new WebClient();
                 while ((svLine = sr.ReadLine()) != null)
                 {
                     var barnesNobleData = svLine.Split(',');
                     var barnesDto = new BarnesDto();
 
-                    var isbn13 = Convert.ToInt64(barnesNobleData[0]);
+                    var isbn13 = barnesNobleData[0];
                     barnesDto.Isbn13 = isbn13;
 
                     try
@@ -57,54 +61,47 @@ namespace BookcaveUnitTests
                         Console.WriteLine("data in csv aren't valid");
                     }
 
-                    switch (method)
+                    if (post)
                     {
-                        case "instance":
-                            var service = new BookService();
+                        var sourceCode = "barnes";
 
-                            try
-                            {
-                                service.PostBarnesData(barnesDto);
-                            }
-                            catch (Exception) { }
-                            break;
-                        case "post":
-                            var uri = new Uri(@"http://apps.apprenda.local/api/services/json/r/bookcavetest(v1)/BookService/IBook/scholastic");
-                            //var uri = new Uri(@"http://apps.my.apprendacloud.com/api/services/json/r/bookcavetest(v1)/BookService/IBook/scholastic");
-                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
+                        if (useCloud)
+                            uri = new Uri(cloudUrl + sourceCode);
+                        else
+                            uri = new Uri(localUrl + sourceCode);
 
-                            var webClient = new WebClient();
-                            webClient.Headers["Content-type"] = "application/json";
+                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
 
-                            var memoryStream = new MemoryStream();
-                            var serializedJson = new DataContractJsonSerializer(typeof(BarnesDto));
+                        webClient.Headers["Content-type"] = "application/json";
 
-                            serializedJson.WriteObject(memoryStream, barnesDto);
+                        var memoryStream = new MemoryStream();
+                        var serializedJson = new DataContractJsonSerializer(typeof(BarnesDto));
 
-                            try
-                            {
-                                byte[] res1 = webClient.UploadData(uri.ToString(), "POST", memoryStream.ToArray());
-                            }
-                            catch (WebException) { Console.WriteLine(barnesDto.Isbn13 + " has no general data"); }
-                            break;
+                        serializedJson.WriteObject(memoryStream, barnesDto);
+                        byte[] res1 = webClient.UploadData(uri.ToString(), "POST", memoryStream.ToArray());
+
+                        try
+                        {
+                        }
+                        catch (WebException) { Console.WriteLine(barnesDto.Isbn13 + " has no general data"); }
+                    }
+                    else
+                    {
+                        var service = new BookService();
+
+                        service.PostBarnesData(barnesDto);
+                        try
+                        {
+                        }
+                        catch (Exception) { }
                     }
                 }
             }
-        }
+        }//PostBarnesData
+
 
         [TestMethod]
-        public void TestPostLexileDataInMemory()
-        {
-            ParseLexileDB("testinstance");
-        }
-
-        [TestMethod]
-        public void TestPostLexileDataOverWire()
-        {
-            ParseLexileDB("post");
-        }
-
-        private void ParseLexileDB(string method)
+        public void PostLexileData()
         {
             // Create an instance of StreamReader to read from a file. 
             // The using statement also closes the StreamReader. 
@@ -157,10 +154,14 @@ namespace BookcaveUnitTests
                         lexileDto.Awards = bookParams[10];
                         lexileDto.Summary = bookParams[11];
 
-                        if (method.Equals("post"))
+                        if (post)
                         {
-                            //var uri = new Uri(@"http://apps.apprenda.local/api/services/json/r/bookcavetest(v1)/BookService/IBook/lexile");
-                            var uri = new Uri(@"http://apps.my.apprendacloud.com/api/services/json/r/bookcavetest(v1)/BookService/IBook/lexile");
+                            var sourceCode = "lexile";
+
+                            if (useCloud)
+                                uri = new Uri(cloudUrl + sourceCode);
+                            else
+                                uri = new Uri(localUrl + sourceCode);
                             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
 
                             var webClient = new WebClient();
@@ -173,16 +174,16 @@ namespace BookcaveUnitTests
 
                             byte[] res1 = webClient.UploadData(uri.ToString(), "POST", memoryStream.ToArray());
                         }
-                        else if (method.Equals("testinstance"))
+                        else
                         {
                             var service = new BookService();
                             service.PostLexileData(lexileDto);
                         }
-                        else if (method.Equals("skillmetrics"))
-                        {
-                            var service = new BookService();
-                            var skillAggregate = service.GetSkillMetrics(lexileDto.Isbn13);
-                        }
+                        //else if (method.Equals("skillmetrics"))
+                        //{
+                        //    var service = new BookService();
+                        //    var skillAggregate = service.GetSkillMetrics(lexileDto.Isbn13);
+                        //}
                     }
                     catch (IndexOutOfRangeException) { Console.WriteLine("metametrics messed up the row in the text db on line " + line); }
                 }
@@ -190,18 +191,7 @@ namespace BookcaveUnitTests
         }
 
         [TestMethod]
-        public void TestPostScholasticDataInMemory()
-        {
-            ParseScholasticData("scholasticData");
-        }
-
-        [TestMethod]
-        public void TestPostScholasticDataOverWire()
-        {
-            ParseScholasticData("post");
-        }
-
-        private void ParseScholasticData(string test)
+        public void PostScholasticData()
         {
             // Create an instance of StreamReader to read from a file. 
             // The using statement also closes the StreamReader. 
@@ -247,40 +237,40 @@ namespace BookcaveUnitTests
                     var guidedReading = scholasticData[5];
                     scholasticDto.GuidedReading = guidedReading;
 
-                    switch (test)
+                    if (post)
                     {
-                        case "post":
-                            var uri = new Uri(@"http://apps.apprenda.local/api/services/json/r/bookcavetest(v1)/BookService/IBook/scholastic");
-                            //var uri = new Uri(@"http://apps.my.apprendacloud.com/api/services/json/r/bookcavetest(v1)/BookService/IBook/scholastic");
-                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
+                        var sourceCode = "scholastic";
+                        if (useCloud)
+                            uri = new Uri(cloudUrl + sourceCode);
+                        else
+                            uri = new Uri(localUrl + sourceCode);
 
-                            var webClient = new WebClient();
-                            webClient.Headers["Content-type"] = "application/json";
+                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
 
-                            var memoryStream = new MemoryStream();
-                            var serializedJson = new DataContractJsonSerializer(typeof(ScholasticDto));
+                        var webClient = new WebClient();
+                        webClient.Headers["Content-type"] = "application/json";
 
-                            serializedJson.WriteObject(memoryStream, scholasticDto);
+                        var memoryStream = new MemoryStream();
+                        var serializedJson = new DataContractJsonSerializer(typeof(ScholasticDto));
 
-                            try
-                            {
-                                byte[] res1 = webClient.UploadData(uri.ToString(), "POST", memoryStream.ToArray());
-                            }
-                            catch (WebException) { Console.WriteLine(scholasticDto.Isbn13 + " doesn't have general info"); }
-                            break;
+                        serializedJson.WriteObject(memoryStream, scholasticDto);
 
-                        case "scholasticData":
-                            service.PostScholasticData(scholasticDto);
-                            break;
-
-                        case "skillmetrics":
-                            service.GetSkillMetrics(isbn13);
-                            break;
-
-                        case "contentmetrics":
-                            service.GetContentMetrics(isbn13);
-                            break;
+                        try
+                        {
+                            byte[] res1 = webClient.UploadData(uri.ToString(), "POST", memoryStream.ToArray());
+                        }
+                        catch (WebException) { Console.WriteLine(scholasticDto.Isbn13 + " doesn't have general info"); }
                     }
+                    else
+                        service.PostScholasticData(scholasticDto);
+
+                    //case "skillmetrics":
+                    //    service.GetSkillMetrics(isbn13);
+                    //    break;
+
+                    //case "contentmetrics":
+                    //    service.GetContentMetrics(isbn13);
+                    //    break;
                 }
             }
         }
@@ -295,36 +285,7 @@ namespace BookcaveUnitTests
         //}
 
         [TestMethod]
-        public void TestGetSkillMetricsWithScholastic()
-        {
-            ParseScholasticData("skillmetrics");
-        }
-
-        [TestMethod]
-        public void TestGetContentMetricsWithScholastic()
-        {
-            ParseScholasticData("contentmetrics");
-        }
-
-        [TestMethod]
-        public void TestGetSkillMetricsWithLexile()
-        {
-            ParseLexileDB("skillmetrics");
-        }
-
-        [TestMethod]
-        public void TestPostCommonSenseDataInMemory()
-        {
-            ParseCommonSenseFile("instance");
-        }
-
-        [TestMethod]
-        public void TestPostCommonSenseDataOverWire()
-        {
-            ParseCommonSenseFile("post");
-        }
-
-        private void ParseCommonSenseFile(string method)
+        public void PostCommonSenseData()
         {
             using (var sr = new StreamReader(@"C:\Users\tiliska\documents\csm.csv"))
             {
@@ -354,32 +315,33 @@ namespace BookcaveUnitTests
                     var commonSenseOn = commonSenseData[4];
                     commonSenseDto.CommonSenseOn = Convert.ToByte(commonSenseOn);
 
-                    switch (method)
+                    if (post)
                     {
-                        case "post":
-                            var uri = new Uri(@"http://apps.apprenda.local/api/services/json/r/bookcavetest(v1)/BookService/IBook/scholastic");
-                            //var uri = new Uri(@"http://apps.my.apprendacloud.com/api/services/json/r/bookcavetest(v1)/BookService/IBook/scholastic");
-                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
+                        var sourceCode = "commonsense";
 
-                            var webClient = new WebClient();
-                            webClient.Headers["Content-type"] = "application/json";
+                        if (useCloud)
+                            uri = new Uri(cloudUrl + sourceCode);
+                        else
+                            uri = new Uri(localUrl + sourceCode);
 
-                            var memoryStream = new MemoryStream();
-                            var serializedJson = new DataContractJsonSerializer(typeof(ScholasticDto));
+                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
 
-                            serializedJson.WriteObject(memoryStream, commonSenseDto);
+                        var webClient = new WebClient();
+                        webClient.Headers["Content-type"] = "application/json";
 
-                            try
-                            {
-                                byte[] res1 = webClient.UploadData(uri.ToString(), "POST", memoryStream.ToArray());
-                            }
-                            catch (WebException) { Console.WriteLine(commonSenseDto.Isbn13 + " doesn't have general info"); }
-                            break;
+                        var memoryStream = new MemoryStream();
+                        var serializedJson = new DataContractJsonSerializer(typeof(CommonSenseDto));
 
-                        case "instance":
-                            service.PostCommonSenseData(commonSenseDto);
-                            break;
-                    }//switch
+                        serializedJson.WriteObject(memoryStream, commonSenseDto);
+
+                        try
+                        {
+                            byte[] res1 = webClient.UploadData(uri.ToString(), "POST", memoryStream.ToArray());
+                        }
+                        catch (WebException) { Console.WriteLine(commonSenseDto.Isbn13 + " doesn't have general info"); }
+                    }
+                    else
+                        service.PostCommonSenseData(commonSenseDto);
                 }//while
             }//using
         }//ParseCommonSenseFile
@@ -392,3 +354,4 @@ namespace BookcaveUnitTests
         }
     }
 }
+

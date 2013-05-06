@@ -21,13 +21,28 @@ namespace BookCave.Service
             lines[11] = "--" + lines[11];
 
             using (System.IO.StreamWriter file = new System.IO.StreamWriter(AppProvisioningPath))
+            {
                 foreach (string line in lines)
                 {
                     file.WriteLine(line);
 
                     //Console.WriteLine(line);
                 }
-            Console.WriteLine("USE [bookcave]; commented out");
+                Console.WriteLine("USE [bookcave]; commented out");
+                Console.WriteLine("inserting insert commands");
+                using (var sr = new StreamReader(@"C:\Users\tiliska\Documents\scriptabridged.sql"))
+                {
+                    string bookDataLine;
+                    sr.ReadLine();
+                    sr.ReadLine();
+                    // Read and display lines from the file until the end of  
+                    // the file is reached. 
+                    while ((bookDataLine = sr.ReadLine()) != null)
+                    {
+                        file.WriteLine(bookDataLine);
+                    }
+                }
             }
+        }
     }
 }

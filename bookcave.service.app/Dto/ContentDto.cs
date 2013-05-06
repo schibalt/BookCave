@@ -25,6 +25,6 @@ namespace BookCave.Service.Dto
         public Nullable<byte> BarnesAgeOld { get; set; }
 
         [DataMember]
-        public double AggregateContent { get; set; }
+        public double? AggregateContent { get; set; }
     }
 }
