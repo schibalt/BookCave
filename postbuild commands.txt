@@ -1,2 +1,0 @@
-xcopy /y "$(ProjectDir)app.config"  "$(SolutionDir)BookcaveUnitTests "
-copy  "$(ProjectDir)app.config"  "$(SolutionDir)BookcaveUnitTests\bin\$(ConfigurationName)\BookcaveUnitTests.dll.config"

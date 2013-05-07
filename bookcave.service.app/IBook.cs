@@ -71,11 +71,16 @@ namespace BookCave
         ContentDto GetContentMetrics(string isbn13);
 
         [OperationContract]
+        [WebGet(ResponseFormat = WebMessageFormat.Json,
+            UriTemplate = "books/{isbn13}")]
+        SuperDto GetBookData(string isbn13);
+
+        [OperationContract]
         [WebGet(
             //BodyStyle = WebMessageBodyStyle.Bare,
             ResponseFormat = WebMessageFormat.Json,
             //RequestFormat = WebMessageFormat.Json,
-            UriTemplate = "/books?content={content}&title={title}&skill={skill}&author={author}&summary={summary}")]
+            UriTemplate = "books?content={content}&title={title}&skill={skill}&author={author}&summary={summary}")]
         List<SuperDto> GetBooks(string content, string title, string skill, string author, string summary);
     }
 }

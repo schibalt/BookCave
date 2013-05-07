@@ -88,15 +88,18 @@ namespace BookCave.Service
 
                 if (skillRecord == null)
                     return new SkillDto();
+
+                /*
                 var scholasticGrade = skillRecord.ScholasticGrade;
                 var dra = skillRecord.Dra;
                 var lexscore = skillRecord.LexScore;
                 var guidedReading = skillRecord.GuidedReading;
+                 */
 
                 Mapper.CreateMap<SkillRecord, SkillDto>();
                 var skillDto = Mapper.Map<SkillRecord, SkillDto>(skillRecord);
-                var aggregateSkill = DataFunctions.GetAverageSkillAge(skillRecord);
-                skillDto.AggregateSkill = aggregateSkill;
+                //var aggregateSkill = DataFunctions.GetAverageSkillAge(skillRecord);
+                //skillDto.AggregateSkill = aggregateSkill;
                 return skillDto;
             }
         }
@@ -116,6 +119,7 @@ namespace BookCave.Service
                 if (contentRecord == null)
                     return new ContentDto();
 
+                /*
                 var scholasticGradeHigher = contentRecord.ScholasticGradeHigher;
                 var scholasticGradeLower = contentRecord.ScholasticGradeLower;
                 var barnesAgeYoung = contentRecord.BarnesAgeYoung;
@@ -123,14 +127,15 @@ namespace BookCave.Service
                 var commonSenseNoKids = contentRecord.CommonSenseNoKids;
                 var commonSensePause = contentRecord.CommonSensePause;
                 var commonSenseOn = contentRecord.CommonSenseOn;
+                 */
 
                 //make DTO
                 Mapper.CreateMap<ContentRecord, ContentDto>();
                 var contentDto = Mapper.Map<ContentRecord, ContentDto>(contentRecord);
 
                 //get aggregated content score, assign to DTO property, then return
-                var aggregateContent = DataFunctions.GetAverageContentAge(contentRecord);
-                contentDto.AggregateContent = aggregateContent;
+                //var aggregateContent = DataFunctions.GetAverageContentAge(contentRecord);
+                //contentDto.AggregateContent = aggregateContent;
                 return contentDto;
             }
         }
@@ -173,7 +178,7 @@ namespace BookCave.Service
 
                 var queryBySkill = new StringBuilder(query.ToString());
                 queryBySkill.Append(" where SkillRecords.AverageSkillAge>={0} and SkillRecords.AverageSkillAge<{1}");
-                if (skill != null)
+                if (skill != null && skill.Length > 0)
                 {
                     //log.Debug("skill: " + skill);
                     // lexile should be in one of 2 formats:
@@ -207,9 +212,9 @@ namespace BookCave.Service
                 }
 
                 var booksByContent = new List<SuperRecord>();
-                var queryByContent = new StringBuilder(query.ToString()); ;
+                var queryByContent = new StringBuilder(query.ToString());
                 queryByContent.Append(" where ContentRecords.AverageContentAge>={0} and ContentRecords.AverageContentAge<{1}");
-                if (content != null)
+                if (content != null && content.Length > 0)
                 {
                     //log.Debug("age: " + content);
                     // age should be in one of 2 formats:
@@ -245,7 +250,7 @@ namespace BookCave.Service
                 var queryByTitle = new StringBuilder(query.ToString()); ;
                 queryByTitle.Append(" where title like {0}");
 
-                if (title != null)
+                if (title != null && title.Length > 0)
                 {
                     var annotatedTitle = '%' + title + '%';
 
@@ -257,7 +262,7 @@ namespace BookCave.Service
                 var queryByAuthor = new StringBuilder(query.ToString()); ;
                 queryByAuthor.Append(" where author like {0}");
 
-                if (author != null)
+                if (author != null && author.Length > 0)
                 {
                     var annotatedAuthor = '%' + author + '%';
                     booksByAuthor = context.Database.SqlQuery<SuperRecord>(queryByAuthor.ToString(), annotatedAuthor).ToList();
@@ -268,7 +273,7 @@ namespace BookCave.Service
                 var queryBySummary = new StringBuilder(query.ToString()); ;
                 queryBySummary.Append(" where summary like {0}");
 
-                if (author != null)
+                if (summary != null && summary.Length > 0)
                 {
                     var annotatedSummary = '%' + summary + '%';
                     booksBySummary = context.Database.SqlQuery<SuperRecord>(queryBySummary.ToString(), annotatedSummary).ToList();
@@ -319,7 +324,11 @@ namespace BookCave.Service
                 Mapper.CreateMap<SuperRecord, SuperDto>();
 
                 foreach (var record in dalResultSet)
-                    results.Add(Mapper.Map<SuperRecord, SuperDto>(record));
+                {
+                    var result = Mapper.Map<SuperRecord, SuperDto>(record);
+                    if (result.Summary!=null&&result.Summary.Length > 400) result.Summary = result.Summary.Substring(0, 330) + "...";
+                    results.Add(result);
+                }
                 return results;
 
                 //foreach (BookRecord book in dalResultSet)
@@ -350,7 +359,7 @@ namespace BookCave.Service
         {
             if (!LexileRecordVerified(lexileDto))
                 return new ResultDto { ResultDescription = "bad object" };
-
+            var result = new ResultDto { ResultDescription = "" };
             Mapper.CreateMap<LexileDto, SkillRecord>();
             using (var context = new BookcaveEntities())
             {
@@ -376,12 +385,14 @@ namespace BookCave.Service
                         aggregateSkill,
                         lexileDto.Isbn13
                     );
+                    result.ResultDescription += lexileDto.Isbn13 + " skills updated ";
                 }
                 else
                 {
                     var newSkillRecord = Mapper.Map<LexileDto, SkillRecord>(lexileDto);
                     newSkillRecord.AverageSkillAge = DataFunctions.GetAverageSkillAge(newSkillRecord);
                     context.SkillRecords.Add(newSkillRecord);
+                    result.ResultDescription += lexileDto.Isbn13 + " skills added ";
                 }
 
                 Mapper.CreateMap<LexileDto, BookRecord>();
@@ -411,14 +422,14 @@ namespace BookCave.Service
                         lexileDto.Isbn13
                     );
                     context.SaveChanges();
-                    return new ResultDto { ResultDescription = lexileDto.Isbn13 + " updated" };
+                    result.ResultDescription += lexileDto.Isbn13 + " books added ";
                 }
                 else
                 {
                     var newBookRecord = Mapper.Map<LexileDto, BookRecord>(lexileDto);
                     context.BookRecords.Add(newBookRecord);
                     context.SaveChanges();
-                    return new ResultDto { ResultDescription = lexileDto.Isbn13 + " added" };
+                    result.ResultDescription += lexileDto.Isbn13 + " books added ";
                 }
 
                 //try
@@ -427,10 +438,12 @@ namespace BookCave.Service
                 //catch (DbEntityValidationException e) { Console.WriteLine(e.Message); }
                 //catch (DbUpdateException e) { Console.WriteLine(e.Message); }
             }
+            return result;
         }
 
         public ResultDto PostBarnesData(BarnesDto barnesDto)
         {
+            ResultDto result = new ResultDto { ResultDescription = "" };
             using (var context = new BookcaveEntities())
             {
                 var bookRecords = context.Database.SqlQuery<BookRecord>("Select * from BookRecords where Isbn13 = {0}", barnesDto.Isbn13);
@@ -438,7 +451,9 @@ namespace BookCave.Service
                     return new ResultDto { ResultDescription = "no general info exists yet for " + barnesDto.Isbn13 };
 
                 var ratingRecords = context.Database.SqlQuery<RatingRecord>("Select * from RatingRecords where Isbn13 = {0}", barnesDto.Isbn13);
-                var currentRatingRecord = ratingRecords.FirstOrDefault();
+                RatingRecord currentRatingRecord = null;
+
+                if (ratingRecords.Count() > 0) currentRatingRecord = ratingRecords.FirstOrDefault();
                 Mapper.CreateMap<BarnesDto, RatingRecord>();
 
                 if (currentRatingRecord != null)
@@ -447,15 +462,20 @@ namespace BookCave.Service
                     context.Database.ExecuteSqlCommand("update RatingRecords set BarnesAvg={0} where Isbn13={1}",
                         barnesDto.BarnesAvg,
                         barnesDto.Isbn13);
+                    result.ResultDescription += barnesDto.Isbn13 + " ratings updated ";
                 }
                 else
                 {
                     var newRatingRecord = Mapper.Map<BarnesDto, RatingRecord>(barnesDto);
                     context.RatingRecords.Add(newRatingRecord);
+                    result.ResultDescription += barnesDto.Isbn13 + " ratings added ";
                 }
 
                 var contentRecords = context.Database.SqlQuery<ContentRecord>("Select * from ContentRecords where Isbn13 = {0}", barnesDto.Isbn13);
-                var currentContentRecord = contentRecords.FirstOrDefault();
+                ContentRecord currentContentRecord = null;
+
+                if (contentRecords.Count() > 0)
+                    currentContentRecord = contentRecords.FirstOrDefault();
                 Mapper.CreateMap<BarnesDto, ContentRecord>();
 
                 if (currentContentRecord != null)
@@ -471,7 +491,7 @@ namespace BookCave.Service
                         barnesDto.Isbn13
                     );
                     context.SaveChanges();
-                    return new ResultDto { ResultDescription = barnesDto.Isbn13 + " updated" };
+                    result.ResultDescription += barnesDto.Isbn13 + " contents updated";
                 }
                 else
                 {
@@ -479,9 +499,8 @@ namespace BookCave.Service
                     newContentRecord.AverageContentAge = DataFunctions.GetAverageContentAge(newContentRecord);
                     context.ContentRecords.Add(newContentRecord);
                     context.SaveChanges();
-                    return new ResultDto { ResultDescription = barnesDto.Isbn13 + " added" };
+                    result.ResultDescription += barnesDto.Isbn13 + " contents added";
                 }
-
                 //try
                 //{
                 //}
@@ -491,6 +510,7 @@ namespace BookCave.Service
                 //    return new ResultDto { ResultDescription = e.Message };
                 //}
             }
+            return result;
         }
 
         public ResultDto PostScholasticData(ScholasticDto scholasticDto)
@@ -502,7 +522,7 @@ namespace BookCave.Service
 
             //if (verificationResult.ResultCode < 0)
             //    return verificationResult;
-
+            var result = new ResultDto { ResultDescription = "" };
             using (var context = new BookcaveEntities())
             {
                 var bookRecords = context.Database.SqlQuery<BookRecord>("Select * from BookRecords where Isbn13 = {0}", scholasticDto.Isbn13);
@@ -523,12 +543,14 @@ namespace BookCave.Service
                         scholasticDto.GuidedReading,
                         averageSkillAge,
                         scholasticDto.Isbn13);
+                    result.ResultDescription += scholasticDto.Isbn13 + " skills updated ";
                 }
                 else
                 {
                     var newSkillRecord = Mapper.Map<ScholasticDto, SkillRecord>(scholasticDto);
                     newSkillRecord.AverageSkillAge = DataFunctions.GetAverageSkillAge(newSkillRecord);
                     context.SkillRecords.Add(newSkillRecord);
+                    result.ResultDescription += scholasticDto.Isbn13 + " skills added ";
                 }
 
                 var contentRecords = context.Database.SqlQuery<ContentRecord>("Select * from ContentRecords where Isbn13 = {0}", scholasticDto.Isbn13);
@@ -545,7 +567,7 @@ namespace BookCave.Service
                         averageContentAge,
                         scholasticDto.Isbn13);
                     context.SaveChanges();
-                    return new ResultDto { ResultDescription = scholasticDto.Isbn13 + " updated" };
+                    result.ResultDescription += scholasticDto.Isbn13 + " contents updated";
                 }
                 else
                 {
@@ -553,19 +575,20 @@ namespace BookCave.Service
 
                     context.ContentRecords.Add(newContentRecord);
                     context.SaveChanges();
-                    return new ResultDto { ResultDescription = scholasticDto.Isbn13 + " added" };
+                    result.ResultDescription += scholasticDto.Isbn13 + " contents added";
                 }
-
                 //try
                 //{
                 //}
                 //catch (DbEntityValidationException e) { Console.WriteLine(e.Message); }
                 //catch (DbUpdateException e) { Console.WriteLine(e.Message); }
             }
+            return result;
         }
 
         public ResultDto PostCommonSenseData(CommonSenseDto commonSenseDto)
         {
+            var result = new ResultDto { ResultDescription = "" };
             using (var context = new BookcaveEntities())
             {
                 var bookRecords = context.Database.SqlQuery<BookRecord>("Select * from BookRecords where Isbn13 = {0}", commonSenseDto.Isbn13);
@@ -590,7 +613,7 @@ namespace BookCave.Service
                         commonSenseDto.Isbn13
                     );
                     context.SaveChanges();
-                    return new ResultDto { ResultDescription = commonSenseDto.Isbn13 + " updated" };
+                    result.ResultDescription += commonSenseDto.Isbn13 + " contents updated";
                 }
                 else
                 {
@@ -598,9 +621,10 @@ namespace BookCave.Service
                     newContentRecord.AverageContentAge = DataFunctions.GetAverageContentAge(newContentRecord);
                     context.ContentRecords.Add(newContentRecord);
                     context.SaveChanges();
-                    return new ResultDto { ResultDescription = commonSenseDto.Isbn13 + " added" };
+                    result.ResultDescription += commonSenseDto.Isbn13 + " contents added";
                 }
             }
+            return result;
         }
 
         private ResultDto VerifyScholasticDto(ScholasticDto scholasticDto)
@@ -644,6 +668,33 @@ namespace BookCave.Service
             }
 
             return new ResultDto { ResultDescription = "verified" };
+        }
+
+        public SuperDto GetBookData(string isbn13)
+        {
+            var query = new StringBuilder();
+            query.Append("select * from BookRecords");
+            query.Append(" full outer join SkillRecords on BookRecords.Isbn13=SkillRecords.Isbn13");
+            query.Append(" full outer join ContentRecords on BookRecords.Isbn13=ContentRecords.Isbn13");
+            query.Append(" full outer join RatingRecords on BookRecords.Isbn13=RatingRecords.Isbn13");
+            query.Append(" where BookRecords.Isbn13={0}");
+
+            using (var context = new BookcaveEntities())
+            {
+                var booksByContent = context.Database.SqlQuery<SuperRecord>(query.ToString(), isbn13).ToList();
+
+                var bookRecord = booksByContent.FirstOrDefault();
+
+                if (bookRecord != null)
+                {
+                    var bookDto = new SuperDto(); ;
+                    Mapper.CreateMap<SuperRecord, SuperDto>();
+                    Mapper.Map(bookRecord, bookDto);
+                    return bookDto;
+                }
+                else
+                    return new SuperDto();
+            }
         }
     }
 }

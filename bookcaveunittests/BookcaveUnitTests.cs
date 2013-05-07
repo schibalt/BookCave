@@ -22,8 +22,8 @@ namespace BookcaveUnitTests
 
         private const string cloudUrl = @"http://apps.my.apprendacloud.com/api/services/json/r/bookcavetest(v1)/BookService/IBook/";
         private const string localUrl = @"http://apps.apprenda.local/api/services/json/r/bookcavetest(v1)/BookService/IBook/";
-        private const bool useCloud = false;
-        private const bool post = false;
+        private const bool useCloud = true;
+        private const bool post = true;
         private Uri uri;
 
         [TestMethod]
@@ -36,67 +36,70 @@ namespace BookcaveUnitTests
                 string svLine;
                 // Read and display lines from the file until the end of  
                 // the file is reached. 
-                var webClient = new WebClient();
-                while ((svLine = sr.ReadLine()) != null)
+
+                using (var webClient = new WebClient())
                 {
-                    var barnesNobleData = svLine.Split(',');
-                    var barnesDto = new BarnesDto();
-
-                    var isbn13 = barnesNobleData[0];
-                    barnesDto.Isbn13 = isbn13;
-
-                    try
+                    while ((svLine = sr.ReadLine()) != null)
                     {
-                        var ageLow = Convert.ToByte(barnesNobleData[1]);
-                        barnesDto.BarnesAgeYoung = ageLow;
+                        var barnesNobleData = svLine.Split(',');
+                        var barnesDto = new BarnesDto();
 
-                        var ageHigh = Convert.ToByte(barnesNobleData[2]);
-                        barnesDto.BarnesAgeOld = ageHigh;
+                        var isbn13 = barnesNobleData[0];
+                        barnesDto.Isbn13 = isbn13;
 
-                        var rating = Convert.ToDouble(barnesNobleData[3]);
-                        barnesDto.BarnesAvg = rating;
-                    }
-                    catch (FormatException)
-                    {
-                        Console.WriteLine("data in csv aren't valid");
-                    }
+                        try
+                        {
+                            var ageLow = Convert.ToByte(barnesNobleData[1]);
+                            barnesDto.BarnesAgeYoung = ageLow;
 
-                    if (post)
-                    {
-                        var sourceCode = "barnes";
+                            var ageHigh = Convert.ToByte(barnesNobleData[2]);
+                            barnesDto.BarnesAgeOld = ageHigh;
 
-                        if (useCloud)
-                            uri = new Uri(cloudUrl + sourceCode);
+                            var rating = Convert.ToDouble(barnesNobleData[3]);
+                            barnesDto.BarnesAvg = rating;
+                        }
+                        catch (FormatException)
+                        {
+                            Console.WriteLine("data in csv aren't valid");
+                        }
+
+                        if (post)
+                        {
+                            var sourceCode = "barnes";
+
+                            if (useCloud)
+                                uri = new Uri(cloudUrl + sourceCode);
+                            else
+                                uri = new Uri(localUrl + sourceCode);
+
+                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
+
+                            webClient.Headers["Content-type"] = "application/json";
+
+                            var memoryStream = new MemoryStream();
+                            var serializedJson = new DataContractJsonSerializer(typeof(BarnesDto));
+
+                            serializedJson.WriteObject(memoryStream, barnesDto);
+                            byte[] res1 = webClient.UploadData(uri.ToString(), "POST", memoryStream.ToArray());
+
+                            try
+                            {
+                            }
+                            catch (WebException) { Console.WriteLine(barnesDto.Isbn13 + " has no general data"); }
+                        }
                         else
-                            uri = new Uri(localUrl + sourceCode);
-
-                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
-
-                        webClient.Headers["Content-type"] = "application/json";
-
-                        var memoryStream = new MemoryStream();
-                        var serializedJson = new DataContractJsonSerializer(typeof(BarnesDto));
-
-                        serializedJson.WriteObject(memoryStream, barnesDto);
-                        byte[] res1 = webClient.UploadData(uri.ToString(), "POST", memoryStream.ToArray());
-
-                        try
                         {
-                        }
-                        catch (WebException) { Console.WriteLine(barnesDto.Isbn13 + " has no general data"); }
-                    }
-                    else
-                    {
-                        var service = new BookService();
+                            var service = new BookService();
+                            service.PostBarnesData(barnesDto);
 
-                        service.PostBarnesData(barnesDto);
-                        try
-                        {
+                            try
+                            {
+                            }
+                            catch (Exception) { }
                         }
-                        catch (Exception) { }
-                    }
-                }
-            }
+                    }//while
+                }//using
+            }//using
         }//PostBarnesData
 
 
@@ -112,83 +115,86 @@ namespace BookcaveUnitTests
                 string svLine;
                 var line = 1;
 
-                // Read and display lines from the file until the end of  
-                // the file is reached. 
-                while ((svLine = sr.ReadLine()) != null)
+                using (var webClient = new WebClient())
                 {
-                    line++;
-                    if (svLine.StartsWith("#"))
+                    var sourceCode = "lexile";
+
+                    if (useCloud)
+                        uri = new Uri(cloudUrl + sourceCode);
+                    else
+                        uri = new Uri(localUrl + sourceCode);
+
+                    // Read and display lines from the file until the end of  
+                    // the file is reached. 
+                    while ((svLine = sr.ReadLine()) != null)
                     {
-                        Console.WriteLine("still a # on line " + line);
-                        continue;
-                    }
+                        line++;
+                        if (svLine.StartsWith("#"))
+                        {
+                            Console.WriteLine("still a # on line " + line);
+                            continue;
+                        }
 
-                    var bookParams = svLine.Split('\t');
-                    var lexileDto = new LexileDto();
+                        var bookParams = svLine.Split('\t');
+                        var lexileDto = new LexileDto();
 
-                    lexileDto.Title = bookParams[0];
-                    lexileDto.Author = bookParams[1];
-
-                    try
-                    {
-                        lexileDto.Isbn = bookParams[2];
+                        lexileDto.Title = bookParams[0];
+                        lexileDto.Author = bookParams[1];
 
                         try
                         {
-                            lexileDto.Isbn13 = bookParams[3];
+                            lexileDto.Isbn = bookParams[2];
 
-                            if (bookParams[5].Length > 0)
-                                lexileDto.LexScore = Convert.ToInt16(bookParams[5]);
+                            try
+                            {
+                                lexileDto.Isbn13 = bookParams[3];
 
-                            if (bookParams[7].Length > 0)
-                                lexileDto.PageCount = Convert.ToInt16(bookParams[7]);
+                                if (bookParams[5].Length > 0)
+                                    lexileDto.LexScore = Convert.ToInt16(bookParams[5]);
 
-                            lexileDto.LexUpdate = Convert.ToDateTime(bookParams[12]);
-                        }
-                        catch (FormatException) { Console.WriteLine("metametrics messed up the row in the text db on line " + line); }
+                                if (bookParams[7].Length > 0)
+                                    lexileDto.PageCount = Convert.ToInt16(bookParams[7]);
 
-                        lexileDto.LexCode = bookParams[4];
-                        lexileDto.Publisher = bookParams[6];
-                        lexileDto.DocType = bookParams[8];
-                        lexileDto.Series = bookParams[9];
-                        lexileDto.Awards = bookParams[10];
-                        lexileDto.Summary = bookParams[11];
+                                lexileDto.LexUpdate = Convert.ToDateTime(bookParams[12]);
+                            }
+                            catch (FormatException) { Console.WriteLine("metametrics messed up the row in the text db on line " + line); }
 
-                        if (post)
-                        {
-                            var sourceCode = "lexile";
+                            lexileDto.LexCode = bookParams[4];
+                            lexileDto.Publisher = bookParams[6];
+                            lexileDto.DocType = bookParams[8];
+                            lexileDto.Series = bookParams[9];
+                            lexileDto.Awards = bookParams[10];
+                            lexileDto.Summary = bookParams[11];
 
-                            if (useCloud)
-                                uri = new Uri(cloudUrl + sourceCode);
+                            if (post)
+                            {
+                                //HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
+
+                                webClient.Headers["Content-type"] = "application/json";
+
+                                var memoryStream = new MemoryStream();
+                                var serializedJson = new DataContractJsonSerializer(typeof(LexileDto));
+
+                                serializedJson.WriteObject(memoryStream, lexileDto);
+
+                                byte[] res1 = webClient.UploadData(uri.ToString(), "POST", memoryStream.ToArray());
+                            }
                             else
-                                uri = new Uri(localUrl + sourceCode);
-                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
-
-                            var webClient = new WebClient();
-                            webClient.Headers["Content-type"] = "application/json";
-
-                            var memoryStream = new MemoryStream();
-                            var serializedJson = new DataContractJsonSerializer(typeof(LexileDto));
-
-                            serializedJson.WriteObject(memoryStream, lexileDto);
-
-                            byte[] res1 = webClient.UploadData(uri.ToString(), "POST", memoryStream.ToArray());
+                            {
+                                var service = new BookService();
+                                service.PostLexileData(lexileDto);
+                            }
+                            //else if (method.Equals("skillmetrics"))
+                            //{
+                            //    var service = new BookService();
+                            //    var skillAggregate = service.GetSkillMetrics(lexileDto.Isbn13);
+                            //}
                         }
-                        else
-                        {
-                            var service = new BookService();
-                            service.PostLexileData(lexileDto);
-                        }
-                        //else if (method.Equals("skillmetrics"))
-                        //{
-                        //    var service = new BookService();
-                        //    var skillAggregate = service.GetSkillMetrics(lexileDto.Isbn13);
-                        //}
-                    }
-                    catch (IndexOutOfRangeException) { Console.WriteLine("metametrics messed up the row in the text db on line " + line); }
-                }
-            }
-        }
+                        catch (IndexOutOfRangeException) { Console.WriteLine("metametrics messed up the row in the text db on line " + line); }
+                    }//while
+                }//using
+            }//using
+        }//PostLexileData
 
         [TestMethod]
         public void PostScholasticData()
@@ -197,6 +203,12 @@ namespace BookcaveUnitTests
             // The using statement also closes the StreamReader. 
             using (var sr = new StreamReader(@"C:\Users\tiliska\documents\sch-output2.csv"))
             {
+                var sourceCode = "scholastic";
+                if (useCloud)
+                    uri = new Uri(cloudUrl + sourceCode);
+                else
+                    uri = new Uri(localUrl + sourceCode);
+                        
                 sr.ReadLine();
                 string svLine;
                 // Read and display lines from the file until the end of  
@@ -239,13 +251,7 @@ namespace BookcaveUnitTests
 
                     if (post)
                     {
-                        var sourceCode = "scholastic";
-                        if (useCloud)
-                            uri = new Uri(cloudUrl + sourceCode);
-                        else
-                            uri = new Uri(localUrl + sourceCode);
-
-                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
+                        //HttpWebRequest request = (HttpWebRequest)WebRequest.Create(uri);
 
                         var webClient = new WebClient();
                         webClient.Headers["Content-type"] = "application/json";
